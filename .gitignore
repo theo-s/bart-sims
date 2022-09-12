@@ -1,2 +1,3 @@
-*.csv
-
+.Rproj.user
+figures/aistats/
+data/aistats/

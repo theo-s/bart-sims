@@ -1,0 +1,6 @@
+"","Mean RMSE","SD"
+"B-CART (Restricted)",9.86,0.08
+"B-CART",9.75,0.07
+"BART",9.38,0.05
+"CART",10.15,0.08
+"RF",9.45,0.06
