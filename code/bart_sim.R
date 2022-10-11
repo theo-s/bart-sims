@@ -366,18 +366,18 @@ gr_plot_features <- function(args){
   
   
   df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_MAIN)
-  .plot_features(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  .plot_features(df=df_bart_main, leg_loc = "none", fname = "gr_p_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
   
   
   df_bart_apdx <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_APDX)
-  .plot_features(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  .plot_features(df=df_bart_apdx, leg_loc = "none", fname = "gr_p_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
   
   df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
-  .plot_features(df=df_bart_main, leg_loc = "none", fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  .plot_features(df=df_sbart_main, leg_loc = "none", fname = "gr_p_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
   
   
   df_sbart_apdx <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_APDX)
-  .plot_features(df=df_bart_apdx, leg_loc = "none", fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  .plot_features(df=df_sbart_apdx, leg_loc = "none", fname = "gr_p_sbart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
   
   
   # gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
@@ -444,11 +444,11 @@ gr_plot_data_points <- function(args){
   .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
   
   df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
-  .plot_dp(df=df_bart_main, leg_loc = "none", fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  .plot_dp(df=df_sbart_main, leg_loc = "none", fname = "gr_n_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
   
   
   df_sbart_apdx <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_APDX)
-  .plot_dp(df=df_bart_apdx, leg_loc = "none", fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  .plot_dp(df=df_sbart_apdx, leg_loc = "none", fname = "gr_n_sbart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
   
   
 
