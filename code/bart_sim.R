@@ -344,6 +344,11 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
 
 
 gr_plot_features <- function(args){
+  n_tree <- args$n_tree
+  df_fname <- file.path("results", paste0("gr_p_trees_",n_tree,".csv"))
+  if (file.exists(df_fname)){
+    df <- read.csv(df_fname)
+  } else {
   df_bart <- .get_gr_df_features(args, 200, F)
   df_bart$Model <- "BART"
   
@@ -352,8 +357,10 @@ gr_plot_features <- function(args){
   
   df  <- rbind(df_smpl, df_bart)
   df$Model <- factor(df$Model)
+  write.csv(df, df_fname)}
   
-  n_tree <- args$n_tree
+
+  
   
   df_bart_main <- df %>% filter(Model=="BART", Dataset %in% DATASETS_MAIN)
   .plot_features(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
@@ -406,6 +413,12 @@ gr_plot_features <- function(args){
 }
 
 gr_plot_data_points <- function(args){
+  n_tree <- args$n_tree
+  
+  df_fname <- file.path("results", paste0("gr_n_trees_",n_tree,".csv"))
+  if (file.exists(df_fname)){
+    df <- read.csv(df_fname)
+  } else {
   df_bart <- .get_gr_df_dp(args, 200, F)
   df_bart$Model <- "BART"
   
@@ -413,9 +426,11 @@ gr_plot_data_points <- function(args){
   df_smpl$Model <- "Simplified BART"
   
   df  <- rbind(df_smpl, df_bart)
-  df$Model <- factor(df$Model)
+  df$Model <- factor(df$Model) 
+  write.csv(df, df_fname)
   
-  n_tree <- args$n_tree
+  }
+  
   
   df_bart_main <- df %>% filter(Model=="BART", Dataset %in% DATASETS_MAIN)
   .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
