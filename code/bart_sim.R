@@ -329,11 +329,11 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   
 }
 
-.plot_features <- function(df, leg_loc, fname, clrs, n_tree){
+.plot_features <- function(df, leg_loc, fname, clrs, n_tree, y_lab=""){
   gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(size=1.2) +
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
                                          position=position_dodge(0.05)) +
-    theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab("Gelman-Rubin") +
+    theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab(y_lab) +
     geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.3)+
     theme(text = element_text(size = TEXT_SIZE),  legend.position = leg_loc,
           axis.text.x= element_text(size=TEXT_SIZE),axis.text.y= element_text(size=TEXT_SIZE))  +
@@ -366,11 +366,11 @@ gr_plot_features <- function(args){
   
   
   df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_MAIN)
-  .plot_features(df=df_bart_main, leg_loc = "none", fname = "gr_p_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  .plot_features(df=df_bart_main, leg_loc = "none", fname = "gr_p_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   
   df_bart_apdx <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_APDX)
-  .plot_features(df=df_bart_apdx, leg_loc = "none", fname = "gr_p_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  .plot_features(df=df_bart_apdx, leg_loc = "none", fname = "gr_p_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
   .plot_features(df=df_sbart_main, leg_loc = "none", fname = "gr_p_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
@@ -398,11 +398,11 @@ gr_plot_features <- function(args){
 }
 
 
-.plot_dp <- function(df, leg_loc, fname, clrs, n_tree){
+.plot_dp <- function(df, leg_loc, fname, clrs, n_tree, y_lab=""){
   gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line( size=1.2) +
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
                                          position=position_dodge(0.05)) +
-    theme_minimal() + xlab("Number of Data Points") + ylab("Gelman-Rubin") +
+    theme_minimal() + xlab("Number of Data Points") + ylab(y_lab) +
     geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.7)+
     theme(text = element_text(size = TEXT_SIZE), legend.position = leg_loc) + scale_colour_manual(values=clrs) +
     scale_x_continuous(trans = 'log10',
@@ -437,11 +437,11 @@ gr_plot_data_points <- function(args){
   
   
   df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_MAIN)
-  .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   
   df_bart_apdx <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_APDX)
-  .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
   .plot_dp(df=df_sbart_main, leg_loc = "none", fname = "gr_n_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
