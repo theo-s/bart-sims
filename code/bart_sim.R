@@ -42,7 +42,7 @@ option_list = list(
   make_option(c("-r", "--run"), type="integer", default=1,
               help="run", metavar="integer")
 );
-TEXT_SIZE  <- 22
+TEXT_SIZE  <- 28
 DATASETS <- c("california_housing", "breast_tumor", "echo_months", "satellite_image")
 DATASETS_MAIN <- c("california_housing", "breast_tumor")
 DATASETS_APDX <- c("echo_months", "satellite_image")
@@ -330,7 +330,7 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
 }
 
 .plot_features <- function(df, leg_loc, fname, clrs, n_tree, y_lab=""){
-  gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(size=1.2) +
+  gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(size=1.4) +
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
                                          position=position_dodge(0.05)) +
     theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab(y_lab) +
@@ -399,7 +399,7 @@ gr_plot_features <- function(args){
 
 
 .plot_dp <- function(df, leg_loc, fname, clrs, n_tree, y_lab=""){
-  gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line( size=1.2) +
+  gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line(size=1.4) +
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
                                          position=position_dodge(0.05)) +
     theme_minimal() + xlab("Number of Data Points") + ylab(y_lab) +
@@ -437,11 +437,11 @@ gr_plot_data_points <- function(args){
   
   
   df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_MAIN)
-  .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree, y_lab="Gelman-Rubin")
+  .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.9), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   
   df_bart_apdx <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_APDX)
-  .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree, y_lab="Gelman-Rubin")
+  .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.9), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
   .plot_dp(df=df_sbart_main, leg_loc = "none", fname = "gr_n_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
@@ -517,7 +517,7 @@ flips_plot <- function(args){
       
       sd_flips <- 1.96 *(sd(flips) / length(flips))
       
-      df <- rbind(df, c(mean(flips), sd(flips), .get.label.name(ds_name),
+      df <- rbind(df, c(mean(flips), sd_flips, .get.label.name(ds_name),
                         .get.real.n(ds_name, n), "B-CART"))
 
       
