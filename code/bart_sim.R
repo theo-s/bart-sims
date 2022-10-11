@@ -79,7 +79,7 @@ cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   plots_data <- .get_plots_data(data_train, data_test,n_tree, nskip, ndpost,
                                 nchain, fname, dir_data, run=run, restricted=restricted)
   rmse_mat <- plots_data$rmse_mat
-  # rmse_mat[, 1:nchain] <- sapply(rmse_mat[, 1:nchain], function(x) scale(x, scale=FALSE))
+  rmse_mat[, 1:nchain] <- sapply(rmse_mat[, 1:nchain], function(x) scale(x, scale=FALSE))
 
   colnames(rmse_mat) <- c(sprintf("%01d", seq(1,ncol(rmse_mat)-1)), "Sample")
   rmse_mat_wide <- as.data.frame(rmse_mat) %>% pivot_longer(sprintf("%01d", seq(1,ncol(rmse_mat)-1)), names_to = "Chain", values_to = "RMSE")
@@ -624,6 +624,11 @@ main <- function(args){
     first_split_plot(ds_name = ds_name, n = n,p = p, n_tree = n_tree
                      , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = add_legend,y_lab = y_lab, synthetic = synthetic, run=run, restricted=restricted, plot=T)}}
+  if (plot_type == "cum_sum"){
+    cumsum_rmse_plot(ds_name = "breast_tumor", n = n,p = p, n_tree = n_tree
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = add_legend,y_lab = y_lab, synthetic = FALSE, run=run, restricted=restricted)
+  }
 
 
 if (getOption('run.main', default=TRUE)) {
