@@ -42,9 +42,12 @@ option_list = list(
               help="run", metavar="integer")
 );
 TEXT_SIZE  <- 22
-DATASETS <- c("california_housing", "echo_months", "satellite_image", "breast_tumor")
-COLOR <- "Set2"
-COLORS <- c("royalblue", "violet", "forestgreen", "yellow3")
+DATASETS_MAIN <- c("california_housing", "breast_tumor")
+DATASETS_APDX <- c("echo_months", "satellite_image")
+
+COLORS_MAIN <- c("royalblue", "violet")
+COLORS_APDX <- c("forestgreen", "yellow3")
+
 #DATASETS <- c("breast_tumor", "echo_months", "satellite_image")#, "breast_tumor")
 
 
@@ -324,6 +327,21 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   
 }
 
+.plot_features <- function(df, leg_loc, fname, clrs, n_tree){
+  gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(size=1.2) +
+    geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
+                                         position=position_dodge(0.05)) +
+    theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab("Gelman-Rubin") +
+    geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.3)+
+    theme(text = element_text(size = TEXT_SIZE),  legend.position = leg_loc,
+          axis.text.x= element_text(size=TEXT_SIZE),axis.text.y= element_text(size=TEXT_SIZE))  +
+    scale_x_continuous(breaks = c(1, 2, 5)) +     scale_colour_manual(values=clrs)
+  dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
+  .check_create(dir_gr)
+  ggsave(file.path(dir_gr,fname), plot = gg, dpi=300, bg ="white")
+  
+}
+
 
 gr_plot_features <- function(args){
   df_bart <- .get_gr_df_features(args, 200, F)
@@ -337,23 +355,55 @@ gr_plot_features <- function(args){
   
   n_tree <- args$n_tree
   
-  gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
-    geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
-                                         position=position_dodge(0.05)) +
-    theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab("Gelman-Rubin") +
-    geom_hline(yintercept=1.1, linetype='solid', col = 'red4', size=1, alpha=0.3)+
-    # annotate("text", x = 3.5, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5)+
-    theme(text = element_text(size = TEXT_SIZE),  legend.position = "none",
-          axis.text.x= element_text(size=TEXT_SIZE),axis.text.y= element_text(size=TEXT_SIZE))  +
-    scale_x_continuous(breaks = c(1, 2, 5)) +     scale_colour_manual(values=COLORS)
-  dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
-  .check_create(dir_gr)
-  ggsave(file.path(dir_gr,"gr_p.png"), plot = gg, dpi=300, bg ="white")
+  df_bart_main <- df %>% filter(Model=="BART", Dataset %in% DATASETS_MAIN)
+  .plot_features(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  
+  
+  df_bart_apdx <- df %>% filter(Model=="BART", Dataset %in% DATASETS_APDX)
+  .plot_features(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  
+  df_sbart_main <- df %>% filter(Model=="Simplified BART", Dataset %in% DATASETS_MAIN)
+  .plot_features(df=df_bart_main, leg_loc = "none", fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  
+  
+  df_sbart_apdx <- df %>% filter(Model=="Simplified BART", Dataset %in% DATASETS_APDX)
+  .plot_features(df=df_bart_apdx, leg_loc = "none", fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  
+  
+  # gg <- df %>% ggplot(aes(x=features, y=GR, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
+  #   geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
+  #                                        position=position_dodge(0.05)) +
+  #   theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab("Gelman-Rubin") +
+  #   geom_hline(yintercept=1.1, linetype='solid', col = 'red4', size=1, alpha=0.3)+
+  #   # annotate("text", x = 3.5, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5)+
+  #   theme(text = element_text(size = TEXT_SIZE),  legend.position = "none",
+  #         axis.text.x= element_text(size=TEXT_SIZE),axis.text.y= element_text(size=TEXT_SIZE))  +
+  #   scale_x_continuous(breaks = c(1, 2, 5)) +     scale_colour_manual(values=COLORS)
+  # dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
+  # .check_create(dir_gr)
+  # ggsave(file.path(dir_gr,"gr_p.png"), plot = gg, dpi=300, bg ="white")
 
 
 
 }
 
+
+.plot_dp <- function(df, leg_loc, fname, clrs, n_tree){
+  gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line( size=1.2) +
+    geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
+                                         position=position_dodge(0.05)) +
+    theme_minimal() + xlab("Number of Data Points") + ylab("Gelman-Rubin") +
+    geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.7)+
+    theme(text = element_text(size = TEXT_SIZE), legend.position = leg_loc) + scale_colour_manual(values=clrs) +
+    scale_x_continuous(trans = 'log10',
+                       breaks = trans_breaks('log10', function(x) 10^x),
+                       labels = trans_format('log10', math_format(10^.x)))
+  dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
+  .check_create(dir_gr)
+  
+  ggsave(file.path(dir_gr,fname), plot = gg, dpi=300, bg ="white")
+  
+}
 
 gr_plot_data_points <- function(args){
   df_bart <- .get_gr_df_dp(args, 200, F)
@@ -366,23 +416,39 @@ gr_plot_data_points <- function(args){
   df$Model <- factor(df$Model)
   
   n_tree <- args$n_tree
+  
+  df_bart_main <- df %>% filter(Model=="BART", Dataset %in% DATASETS_MAIN)
+  .plot_dp(df=df_bart_main, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  
+  
+  df_bart_apdx <- df %>% filter(Model=="BART", Dataset %in% DATASETS_APDX)
+  .plot_dp(df=df_bart_apdx, leg_loc = c(0.2, 0.8), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  
+  df_sbart_main <- df %>% filter(Model=="Simplified BART", Dataset %in% DATASETS_MAIN)
+  .plot_dp(df=df_bart_main, leg_loc = "none", fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  
+  
+  df_sbart_apdx <- df %>% filter(Model=="Simplified BART", Dataset %in% DATASETS_APDX)
+  .plot_dp(df=df_bart_apdx, leg_loc = "none", fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree)
+  
+  
 
   # df$data_points[df$data_points>2000] <- 3000
-  gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
-    geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
-                                         position=position_dodge(0.05)) +
-    theme_minimal() + xlab("Number of Data Points") + ylab("Gelman-Rubin") +
-    geom_hline(yintercept=1.1, linetype='solid', col = 'red4', size=1, alpha=0.3)+
-    # annotate("text", x = 11, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5, size=8)+
-    theme(text = element_text(size = TEXT_SIZE), legend.position = c(0.2, 0.8)) + scale_colour_manual(values=COLORS) +
-    scale_x_continuous(trans = 'log10',
-                         breaks = trans_breaks('log10', function(x) 10^x),
-                         labels = trans_format('log10', math_format(10^.x)))
+  # gg <- df %>% ggplot(aes(x=data_points, y=GR, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
+  #   geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=1,
+  #                                        position=position_dodge(0.05)) +
+  #   theme_minimal() + xlab("Number of Data Points") + ylab("Gelman-Rubin") +
+  #   geom_hline(yintercept=1.1, linetype='solid', col = 'red4', size=1, alpha=0.3)+
+  #   # annotate("text", x = 11, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5, size=8)+
+  #   theme(text = element_text(size = TEXT_SIZE), legend.position = c(0.2, 0.8)) + scale_colour_manual(values=COLORS) +
+  #   scale_x_continuous(trans = 'log10',
+  #                        breaks = trans_breaks('log10', function(x) 10^x),
+  #                        labels = trans_format('log10', math_format(10^.x)))
 
-  dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
-  .check_create(dir_gr)
-  
-  ggsave(file.path(dir_gr,"gr_n.png"), plot = gg, dpi=300, bg ="white")
+  # dir_gr <- file.path("results", "figures", paste("trees",n_tree, sep="_"))
+  # .check_create(dir_gr)
+  # 
+  # ggsave(file.path(dir_gr,"gr_n.png"), plot = gg, dpi=300, bg ="white")
 
 
 
