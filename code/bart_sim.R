@@ -42,9 +42,10 @@ option_list = list(
               help="run", metavar="integer")
 );
 TEXT_SIZE  <- 22
+DATASETS <- c("california_housing", "breast_tumor", "echo_months", "satellite_image")
 DATASETS_MAIN <- c("california_housing", "breast_tumor")
 DATASETS_APDX <- c("echo_months", "satellite_image")
-
+COLORS <- c("royalblue", "violet", "forestgreen", "yellow3")
 COLORS_MAIN <- c("royalblue", "violet")
 COLORS_APDX <- c("forestgreen", "yellow3")
 
@@ -428,7 +429,6 @@ gr_plot_data_points <- function(args){
   df  <- rbind(df_smpl, df_bart)
   df$Model <- factor(df$Model) 
   write.csv(df, df_fname)
-  
   }
   
   
