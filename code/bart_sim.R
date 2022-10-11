@@ -42,7 +42,7 @@ option_list = list(
   make_option(c("-r", "--run"), type="integer", default=1,
               help="run", metavar="integer")
 );
-TEXT_SIZE  <- 28
+TEXT_SIZE  <- 22
 DATASETS <- c("california_housing", "breast_tumor", "echo_months", "satellite_image")
 DATASETS_MAIN <- c("california_housing", "breast_tumor")
 DATASETS_APDX <- c("echo_months", "satellite_image")
@@ -473,6 +473,23 @@ gr_plot_data_points <- function(args){
 
 }
 
+.plot_flips <- function(df, pos, y_lab, fname, n_tree){
+  gg <- df %>% ggplot(aes(x=data_points, y=Change, color=Dataset))  +   geom_line(size=1.4) +
+    geom_point(size=4) +   geom_errorbar(aes(ymin=Change-sd, ymax=Change+sd), width=0.2, size=1.2,
+                                         position=position_dodge(0.0)) +
+    theme_minimal() + xlab("Number of Data Points") + ylab(y_lab) +
+    #geom_hline(yintercept=1.1, linetype='dotted', col = 'red', size=2)+
+    # annotate("text", x = 3.5, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5)+
+    theme(text = element_text(size = TEXT_SIZE),  legend.position = pos) +
+    scale_colour_manual(values=COLORS) + scale_x_continuous(trans = 'log10',
+                                                            breaks = trans_breaks('log10', function(x) 10^x),
+                                                            labels = trans_format('log10', math_format(10^.x)))
+  dir_gr <- file.path("results","figures", paste("trees",n_tree, sep="_"))
+  .check_create(dir_gr)
+
+  ggsave(file.path(dir_gr,fname), plot = gg, dpi=300, bg ="white")
+}
+
 flips_plot <- function(args){
   n_tree <- 1
   nskip <- args$n_burn
@@ -481,8 +498,13 @@ flips_plot <- function(args){
   p <- args$n_features
   run <- args$run
   synthetic <- args$synthetic
+  n_tree <- args$n_tree
   add_leg <- FALSE
   n_dps <- c(200, 2000, Inf)
+  file_flips <- file.path("results", "flips.csv")
+  if (file.exists(file_flips)){
+    df <- read.csv(file_flips)
+  } else {
   df <- data.frame(matrix(ncol = 4, nrow = 0))
 
   for (ds_name in DATASETS){
@@ -531,7 +553,6 @@ flips_plot <- function(args){
     }
 
   
-  file_flips <- file.path("results", "flips.csv")
   colnames(df) <- c("Change", "sd", "Dataset", "data_points", "Model")
 
   df$Change <- as.numeric(df$Change) * 6000
@@ -542,23 +563,18 @@ flips_plot <- function(args){
   # df$data_points <- log(as.numeric(df$data_points))
   df$data_points <- as.numeric(df$data_points)
   df$Dataset <- factor(df$Dataset)
-  # df$data_points[df$data_points>2000] <- 3000
-  gg <- df %>% ggplot(aes(x=data_points, y=Change, color=Dataset))  +   geom_line(aes(linetype=Model), size=1.2) +
-    geom_point(size=4) +   geom_errorbar(aes(ymin=Change-sd, ymax=Change+sd), width=1,
-                                         position=position_dodge(0.0)) +
-    theme_minimal() + xlab("Number of Data Points") + ylab("Number of Change the First Split") +
-    #geom_hline(yintercept=1.1, linetype='dotted', col = 'red', size=2)+
-    # annotate("text", x = 3.5, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5)+
-    theme(text = element_text(size = TEXT_SIZE),  legend.position = c(0.8, 0.8)) +
-    scale_colour_manual(values=COLORS) + scale_x_continuous(trans = 'log10',
-                                                               breaks = trans_breaks('log10', function(x) 10^x),
-                                                               labels = trans_format('log10', math_format(10^.x)))
-  dir_gr <- file.path("results","figures", paste("trees",n_tree, sep="_"))
-  .check_create(dir_gr)
-  
-  ggsave(file.path(dir_gr,"flips.png"), plot = gg, dpi=300, bg ="white")
+    write.csv(df, file_flips)
+  }
+  df$ds_lower <- str_replace(tolower(df$Dataset), " ", "_")
+  bart_flips <- df %>% filter(Model=="B-CART")
+  .plot_flips(df=bart_flips, pos = c(0.7, 0.8), y_lab = "Number of Changes to the Root Split", fname = "bcart_flips.png", n_tree=n_tree)
 
-  write.csv(df, file_flips)
+  bart_flips <- df %>% filter(Model!="B-CART")
+  .plot_flips(df=bart_flips, pos = "none", y_lab = "", fname = "sbart_flips.png", n_tree=n_tree)
+
+  # df$data_points[df$data_points>2000] <- 3000
+
+
 }
 
 main <- function(args){
