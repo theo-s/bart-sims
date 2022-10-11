@@ -623,12 +623,22 @@ main <- function(args){
     y_lab <- ""#"First Split Variable"
     first_split_plot(ds_name = ds_name, n = n,p = p, n_tree = n_tree
                      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = add_legend,y_lab = y_lab, synthetic = synthetic, run=run, restricted=restricted, plot=T)}}
+                     add_legend = add_legend,y_lab = y_lab, synthetic = synthetic, run=run, restricted=restricted, plot=T)}
+
   if (plot_type == "cum_sum"){
-    cumsum_rmse_plot(ds_name = "breast_tumor", n = n,p = p, n_tree = n_tree
+    cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = add_legend,y_lab = y_lab, synthetic = FALSE, run=run, restricted=restricted)
-  }
+                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=2, restricted=restricted)
+    cumsum_rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=restricted)
+    cumsum_rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=3, restricted=restricted)
+    cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=restricted)
+  }}
 
 
 if (getOption('run.main', default=TRUE)) {
