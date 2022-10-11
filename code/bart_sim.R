@@ -334,7 +334,7 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=0.2,size=1.2,
                                          position=position_dodge(0.05)) +
     theme_minimal() + xlab(TeX(r'($d/d_0$)')) + ylab(y_lab) +
-    geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.7)+
+    geom_hline(yintercept=1.1, linetype='dashed', col = 'grey27', size=1, alpha=0.7)+
     theme(text = element_text(size = TEXT_SIZE),  legend.position = leg_loc,
           axis.text.x= element_text(size=TEXT_SIZE),axis.text.y= element_text(size=TEXT_SIZE))  +
     scale_x_continuous(breaks = c(1, 2, 5)) +     scale_colour_manual(values=clrs)
@@ -403,7 +403,7 @@ gr_plot_features <- function(args){
     geom_point(size=4) +   geom_errorbar(aes(ymin=GR-sd, ymax=GR+sd), width=0.2,size=1.4,
                                          position=position_dodge(0.05)) +
     theme_minimal() + xlab("Number of Data Points") + ylab(y_lab) +
-    geom_hline(yintercept=1.1, linetype='solid', col = 'grey27', size=1, alpha=0.7)+
+    geom_hline(yintercept=1.1, linetype='dashed', col = 'grey27', size=1, alpha=0.7)+
     theme(text = element_text(size = TEXT_SIZE), legend.position = leg_loc) + scale_colour_manual(values=clrs) +
     scale_x_continuous(trans = 'log10',
                        breaks = trans_breaks('log10', function(x) 10^x),
