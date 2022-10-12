@@ -132,11 +132,25 @@ rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_l
   # rmse_mat_wide$RMSE <- (rmse_mat_wide$RMSE/rmse_mean - 1) * 100
   # x_lab <- paste("% Change to Mean RMSE")
   x_lab <- "RMSE"
+  colors <- c()
   x_lim <- quantile(rmse_mat_wide$RMSE, c(0.01, 0.99))
   pos <- ifelse(add_legend, "right", "none")
   gg <-   ggplot(rmse_mat_wide, aes(x = RMSE, y = Chain, fill = Chain)) +
-    geom_density_ridges(aes(point_color = Chain, point_fill = Chain),
-                        alpha = .2, point_alpha = 1, jittered_points = TRUE)+
+    geom_density_ridges() +
+    #
+    # geom_density_ridges(aes(point_color = "grey27", point_fill = "grey27"),
+    #                     alpha = .2, point_alpha = 1, jittered_points = TRUE)+
+    scale_fill_brewer(palette = "Blues")+
+    # scale_fill_manual(values = c(
+    #  "grey",
+    #   "grey",
+    #   "black",
+    #    "grey",
+    #    "grey",
+    #    "grey",
+    #    "black",
+    #    "grey"
+    # ))+
     xlab(x_lab) + expand_limits(y=0)+ theme_classic()   +
     theme(text = element_text(size = TEXT_SIZE),  axis.ticks.y = element_blank(),
           axis.text.y = element_blank(),axis.text.x= element_text(size=18), legend.position = pos) +
@@ -145,10 +159,11 @@ rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_l
     # ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")",
     #                "\nGelman Rubin: ", round(gelman, 4),
     #                "\nMean RMSE: ", round(rmse_mean, 2))) + ylab(y_lab) +xlim(x_lim[1], x_lim[2])
-  
 
+    dir_fig <- file.path("results", "figures")
     dir_rmse <- file.path(dir_fig, "rmse")
     .check_create(dir_rmse)
+    fname <- paste(ds_name, n, "tree", n_tree, sep="_")
     fname_suf <- paste0(fname, ".png")
     print(file.path(dir_rmse,fname_suf))
     ggsave(file.path(dir_rmse,fname_suf), plot = gg, dpi=300, bg = "white")
@@ -627,7 +642,7 @@ main <- function(args){
                      , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = add_legend,y_lab = y_lab, synthetic = synthetic, run=run, restricted=restricted, plot=T)}
 
-  if (plot_type == "cum_sum"){
+  if (plot_type == "cusum"){
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = T,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=2, restricted=F)
@@ -653,7 +668,36 @@ main <- function(args){
     cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T)
-  }}
+  }
+  if (plot_type == "rmse_paper"){
+    y_lab  <- "Density"
+    rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
+    rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
+    rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
+    rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
+
+    rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=T, plot = T)
+    rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T, plot = T)
+    rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
+    rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
+  }
+}
 
 
 if (getOption('run.main', default=TRUE)) {
