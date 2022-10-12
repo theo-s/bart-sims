@@ -645,26 +645,26 @@ main <- function(args){
   if (plot_type == "cusum"){
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=2, restricted=F)
+                     add_legend = F,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=2, restricted=F)
     cumsum_rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F)
     cumsum_rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=3, restricted=F)
+                     add_legend = F,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=3, restricted=F)
     cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F)
 
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=2, restricted=T)
+                     add_legend = F,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=2, restricted=T)
     cumsum_rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T)
     cumsum_rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=3, restricted=T)
+                     add_legend = F,y_lab = TeX(r'($S^{(j)}_t$)'), synthetic = FALSE, run=3, restricted=T)
     cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T)
