@@ -79,7 +79,7 @@ cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   plots_data <- .get_plots_data(data_train, data_test,n_tree, nskip, ndpost,
                                 nchain, fname, dir_data, run=run, restricted=restricted)
   rmse_mat <- plots_data$rmse_mat
-  rmse_mat[, 1:nchain] <- sapply(rmse_mat[, 1:nchain], function(x) scale(x, scale=FALSE))
+  rmse_mat[, 1:nchain] <- sapply(rmse_mat[, 1:nchain], function(x) cumsum(scale(x, scale=FALSE)))
 
   colnames(rmse_mat) <- c(sprintf("%01d", seq(1,ncol(rmse_mat)-1)), "Sample")
   rmse_mat_wide <- as.data.frame(rmse_mat) %>% pivot_longer(sprintf("%01d", seq(1,ncol(rmse_mat)-1)), names_to = "Chain", values_to = "RMSE")
@@ -93,8 +93,10 @@ cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn:", n)) + ylab(y_lab)
 
   if (!is.null(fname)){
-    dir_rmse <- file.path(dir_fig, "cumsum")
+    dir_fig <- file.path("results", "figures")
+    dir_rmse <- file.path(dir_fig, "cusum")
     .check_create(dir_rmse)
+    fname <- paste(ds_name, n, "tree", n_tree, sep="_")
     fname_suf <- paste0(fname, ".png")
     print(file.path(dir_rmse,fname_suf))
     ggsave(file.path(dir_rmse,fname_suf), plot = gg, dpi=300, bg = "white")
@@ -628,26 +630,26 @@ main <- function(args){
   if (plot_type == "cum_sum"){
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=2, restricted=F)
+                     add_legend = T,y_lab = "Cusum", synthetic = FALSE, run=2, restricted=F)
     cumsum_rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F)
     cumsum_rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=3, restricted=F)
+                     add_legend = T,y_lab = "Cusum", synthetic = FALSE, run=3, restricted=F)
     cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F)
 
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=2, restricted=T)
+                     add_legend = T,y_lab = "Cusum", synthetic = FALSE, run=2, restricted=T)
     cumsum_rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T)
     cumsum_rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = "CumSum", synthetic = FALSE, run=3, restricted=T)
+                     add_legend = T,y_lab = "Cusum", synthetic = FALSE, run=3, restricted=T)
     cumsum_rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T)
