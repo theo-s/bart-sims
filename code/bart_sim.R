@@ -438,15 +438,15 @@ gr_plot_data_points <- function(args){
   df$ds_lower <- str_replace(tolower(df$Dataset), " ", "_")
   
   
-  df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_MAIN)
-  .plot_dp(df=df_bart_main, leg_loc = c(0.23, 0.85), fname = "gr_n_bart_main.png", clrs = COLORS_MAIN, n_tree=n_tree, y_lab="Gelman-Rubin")
+  df_bart_main <- df %>% filter(Model=="BART", ds_lower %in% DATASETS)
+  .plot_dp(df=df_bart_main, leg_loc = c(0.23, 0.85), fname = "gr_n_bart_main.png", clrs = COLORS, n_tree=n_tree, y_lab="Gelman-Rubin")
   
   
   df_bart_apdx <- df %>% filter(Model=="BART", ds_lower %in% DATASETS_APDX)
   .plot_dp(df=df_bart_apdx, leg_loc = c(0.23, 0.85), fname = "gr_n_bart_apdx.png", clrs = COLORS_APDX, n_tree=n_tree, y_lab="Gelman-Rubin")
   
-  df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_MAIN)
-  .plot_dp(df=df_sbart_main, leg_loc = "none", fname = "gr_n_sbart_main.png", clrs = COLORS_MAIN, n_tree=n_tree)
+  df_sbart_main <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS)
+  .plot_dp(df=df_sbart_main, leg_loc = "none", fname = "gr_n_sbart_main.png", clrs = COLORS, n_tree=n_tree)
   
   
   df_sbart_apdx <- df %>% filter(Model=="Simplified BART", ds_lower %in% DATASETS_APDX)
