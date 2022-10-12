@@ -90,7 +90,7 @@ cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     xlab(x_lab)+ theme_classic()   +
     theme(text = element_text(size = TEXT_SIZE),axis.text.x= element_text(size=TEXT_SIZE),
           axis.text.y= element_text(size=TEXT_SIZE), legend.position = pos) +
-    ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn:", n)) + ylab(y_lab)
+    ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn:", n)) + ylab(TeX(r'($S^{(j)}_t$)'))
 
   if (!is.null(fname)){
     dir_fig <- file.path("results", "figures")
