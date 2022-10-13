@@ -46,8 +46,8 @@ TEXT_SIZE  <- 22
 DATASETS <- c("california_housing", "breast_tumor", "echo_months", "satellite_image")
 DATASETS_MAIN <- c("california_housing", "breast_tumor")
 DATASETS_APDX <- c("echo_months", "satellite_image")
-COLORS <- c("royalblue", "violet", "forestgreen", "yellow3")
-COLORS_MAIN <- c("royalblue", "violet")
+COLORS <- c( "violet","royalblue", "forestgreen", "yellow3")
+COLORS_MAIN <- c("violet", "royalblue")
 COLORS_APDX <- c("forestgreen", "yellow3")
 
 
