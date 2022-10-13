@@ -227,7 +227,7 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     
     split_data$Variable <- factor(split_data$var)
     gg <- ggplot(split_data, aes(x=Chain, fill=Variable)) +
-      geom_histogram(stat="count") + ylab("Count") +
+      geom_histogram(stat="count") + ylab(y_lab) +
       xlab("Chain Number")+
       ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn: ", n))+
       scale_fill_brewer(palette = "Pastel1")+
