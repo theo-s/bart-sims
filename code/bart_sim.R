@@ -65,6 +65,7 @@ COLORS_APDX <- c("forestgreen", "yellow3")
 # # alpha <- 0.05
 # # plot_type <- "rmse"
 # synthetic <- FALSE
+# restricted <- F
 cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_lab, synthetic, run, restricted, plot=FALSE){
   data_all <- get_data(ds_name = ds_name, n = n, p = p, synthetic=synthetic, seed = 42)
   data_train <- data_all[["train"]]
@@ -187,11 +188,10 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   if (!plot){
     fname <- NULL}
   
-  split_data <- plots_data$split_mat
+
+  
   pos <- ifelse(add_legend, "right", "none")
   
-
-  split_data$Chain <- factor(split_data$Chain)
   n_samples <- nskip+ndpost
 
   chain_flips <- c()
@@ -205,22 +205,39 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
 
   }
   if (!is.null(fname)){
-  gg <- split_data %>% 
-    group_by(chain, var) %>% 
-    summarise(Count = n())%>%
-    mutate(freq = Count / sum(Count)) %>% ggplot(aes(x=chain, y=var, size=freq, color=freq)) + geom_point() +
-    ylab(y_lab) + xlab("Chain") + 
+    
+    split_data <- plots_data$split_mat
+    split_data$Chain <- factor(split_data$Chain)
+    split_data$var[split_data$var == -1] <- "Empty Tree" 
+    
+    split_data$Variable <- factor(split_data$var)
+    gg <- ggplot(split_data, aes(x=Chain, fill=Variable)) +
+      geom_histogram(stat="count") + ylab("Count") +
+      xlab("Chain Number")+
+      ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")"))+
+      scale_fill_brewer(palette = "Pastel1")+
     theme_minimal() + theme(text = element_text(size = TEXT_SIZE),
                             legend.position = pos, axis.text.x= element_text(size=TEXT_SIZE),
-                            axis.text.y= element_text(size=TEXT_SIZE)) +
-    guides(size=guide_legend(title="Frequency"), color="none") +
-    scale_colour_gradient2(low='white', mid="grey", high="black")+ 
-    scale_size(range = c(0,7), limits = c(0,1))+
-    ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")"))
+                            axis.text.y= element_text(size=TEXT_SIZE)) 
 
-
-    dir_split <- file.path(dir_fig, "first_split")
+  # gg <- split_data %>% 
+  #   group_by(chain, var) %>% 
+  #   summarise(Count = n())%>%
+  #   mutate(freq = Count / sum(Count)) %>% ggplot(aes(x=chain, y=var, size=freq, color=freq)) + geom_point() +
+  #   ylab(y_lab) + xlab("Chain") + 
+    # theme_minimal() + theme(text = element_text(size = TEXT_SIZE),
+    #                         legend.position = pos, axis.text.x= element_text(size=TEXT_SIZE),
+    #                         axis.text.y= element_text(size=TEXT_SIZE)) +
+  #   guides(size=guide_legend(title="Frequency"), color="none") +
+  #   scale_colour_gradient2(low='white', mid="grey", high="black")+ 
+  #   scale_size(range = c(0,7), limits = c(0,1))+
+  #   ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")"))
+  # 
+    dir_split <- file.path("results", "first_split")
+    # dir_split <- file.path(dir_fig, "first_split")
     .check_create(dir_split)
+    fname <- paste(ds_name, n, "tree", n_tree,"split", sep="_")
+    
     fname_suf <- paste0(fname, ".png")
     print(file.path(dir_split,fname_suf))
     ggsave(file.path(dir_split,fname_suf), plot = gg, dpi=300, bg = "white")
@@ -696,6 +713,34 @@ main <- function(args){
     rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
+  }
+  if (plot_type == "first_split_paper"){
+    y_lab  <- "Count"
+    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
+    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
+    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
+    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
+    
+    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=T, plot = T)
+    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T, plot = T)
+    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
+    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
+              , nskip = nskip, ndpost = ndpost, nchain=nchain,
+              add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
   }
 }
 
