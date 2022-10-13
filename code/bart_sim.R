@@ -187,7 +187,8 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   plots_data <- .get_plots_data(data_train, data_test,n_tree, nskip, ndpost, nchain, fname, dir_data, run,restricted)
   if (!plot){
     fname <- NULL}
-  
+
+  split_data <- plots_data$split_mat
 
   
   pos <- ifelse(add_legend, "right", "none")
@@ -206,7 +207,6 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   }
   if (!is.null(fname)){
     
-    split_data <- plots_data$split_mat
     split_data$Chain <- factor(split_data$Chain)
     split_data$var[split_data$var == -1] <- "Empty Tree" 
     
@@ -214,7 +214,7 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     gg <- ggplot(split_data, aes(x=Chain, fill=Variable)) +
       geom_histogram(stat="count") + ylab("Count") +
       xlab("Chain Number")+
-      ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")"))+
+      ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn: ", n))+
       scale_fill_brewer(palette = "Pastel1")+
     theme_minimal() + theme(text = element_text(size = TEXT_SIZE),
                             legend.position = pos, axis.text.x= element_text(size=TEXT_SIZE),
@@ -233,10 +233,13 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   #   scale_size(range = c(0,7), limits = c(0,1))+
   #   ggtitle(paste0("Dataset: ", .get.label.name(ds_name), " (n=", n, ")"))
   # 
-    dir_split <- file.path("results", "first_split")
+    dir_split <- file.path("results","figures","first_split")
     # dir_split <- file.path(dir_fig, "first_split")
     .check_create(dir_split)
     fname <- paste(ds_name, n, "tree", n_tree,"split", sep="_")
+    if (restricted){
+      fname <- paste(fname, "restricted", sep="_")
+    }
     
     fname_suf <- paste0(fname, ".png")
     print(file.path(dir_split,fname_suf))
@@ -741,6 +744,19 @@ main <- function(args){
     first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
               , nskip = nskip, ndpost = ndpost, nchain=nchain,
               add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
+
+    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
+    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
+    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
+    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
+      , nskip = nskip, ndpost = ndpost, nchain=nchain,
+                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
   }
 }
 
