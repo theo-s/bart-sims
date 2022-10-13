@@ -50,6 +50,21 @@ COLORS <- c("royalblue", "violet", "forestgreen", "yellow3")
 COLORS_MAIN <- c("royalblue", "violet")
 COLORS_APDX <- c("forestgreen", "yellow3")
 
+
+.get_ds_clr <- function(ds_name){
+  if (ds_name =="california_housing"){
+    return("Blues")
+  }
+  if (ds_name == "breast_tumor"){
+    return("Purples")
+  }
+  if (ds_name == "echo_months"){
+    return("Greens")
+  }
+  if (ds_name == "satellite_image"){
+    return("YlOrBr")
+  }
+}
 #DATASETS <- c("breast_tumor", "echo_months", "satellite_image")#, "breast_tumor")
 
 
@@ -111,7 +126,7 @@ rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_l
   y.train <- get.labels(data_train)
   n <- length(y.train)
   add_legend <- F
-  y_lab <- "Density"
+  # y_lab <- "Density"
   dir_data <- .get_dir_data(n_tree, ds_name, restricted)
   dir_fig <- .get_dir_fig(n_tree, ds_name, restricted)
   fname <- .get_fname(nskip = nskip,ndpost = ndpost, n=n,
@@ -141,7 +156,7 @@ rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_l
     #
     # geom_density_ridges(aes(point_color = "grey27", point_fill = "grey27"),
     #                     alpha = .2, point_alpha = 1, jittered_points = TRUE)+
-    scale_fill_brewer(palette = "Blues")+
+    scale_fill_brewer(palette = .get_ds_clr(ds_name))+
     # scale_fill_manual(values = c(
     #  "grey",
     #   "grey",
@@ -690,7 +705,7 @@ main <- function(args){
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T)
   }
   if (plot_type == "rmse_paper"){
-    y_lab  <- "Density"
+    y_lab  <- "Chains"
     rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
@@ -699,7 +714,7 @@ main <- function(args){
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
     rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
+                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
     rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
@@ -712,7 +727,7 @@ main <- function(args){
                      add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T, plot = T)
     rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
+                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
     rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
