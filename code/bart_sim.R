@@ -225,8 +225,8 @@ first_split_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
     split_data$Chain <- factor(split_data$Chain)
     split_data$var[split_data$var == -1] <- "Empty Tree" 
     
-    split_data$Variable <- factor(split_data$var)
-    gg <- ggplot(split_data, aes(x=Chain, fill=Variable)) +
+    split_data$Feature <- factor(split_data$var)
+    gg <- ggplot(split_data, aes(x=Chain, fill=Feature)) +
       geom_histogram(stat="count") + ylab(y_lab) +
       xlab("Chain Number")+
       ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn: ", n))+
