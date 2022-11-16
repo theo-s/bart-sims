@@ -1,7 +1,7 @@
 # A Mixing Time Lower Bound for a Simplified Version of BART
 
 This repository contains the code for all the simulation in the paper [A Mixing Time Lower Bound for a Simplified Version of BART](https://arxiv.org/abs/2210.09352).
-We provid a command line interface to easily produce the figures in this paper:
+We provide a command line interface to easily produce the figures in this paper:
 1. RMSE - plots comparing the kernel density estimates across chains can be generated using:
 ```bash
 Rscript code/bart_sim.R -p rmse -d "echo_months"
