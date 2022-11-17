@@ -26,6 +26,55 @@
   return(rmse_mat)
 }
 
+
+.get_coverage_mat <- function(data_test, bart_fit, ndpost, nskip, nchain){
+  n <- 200
+
+  alpha <- 0.05
+
+
+  y.test <- get.labels(data_test)
+  x.test <- get.features(data_test)
+
+  pdctns <- predict(bart_fit, x.test)
+  sigmas <- bart_fit$sigma
+  rmse_mat <- matrix(NA, nrow = ndpost, ncol = nchain)
+  coverage_mat <- matrix(NA, nrow = 1, ncol = nchain)
+  coverage_avg_length <- matrix(NA, nrow = 1, ncol = nchain)
+  rmse_chains <- matrix(NA, nrow = 1, ncol = nchain)
+
+  for (chain in 1:nchain){
+    predictions_arr <- matrix(NA,nrow = 10*ndpost, ncol=length(y.test))
+
+    for (s in 1:ndpost){
+      idx <- nskip+ (chain-1) * ndpost + s
+      mus <- pdctns[idx, ]
+      sigma <- sigmas[idx]#diag(sigmas[idx], length(mus))
+      sample_preds <- c(mus+sigma, mus-sigma) #mvrnorm(n = 10,mus, sigma)
+      start <- (s-1)*2 + 1
+      end <- start + 1
+      predictions_arr[start:end, ] <- sample_preds
+      preds <- pdctns[idx, ]
+      rmse_mat[s, chain] <- rmse(y.test, preds)
+
+
+    }
+
+    quants <- c(alpha/2, 1-alpha/2)
+    ci <- apply( predictions_arr , 2 , quantile , probs = quants , na.rm = TRUE )
+    chain_coverage <- mean(y.test > ci[1, ] & y.test < ci[2, ])
+    chain_avg_length <- mean(ci[2, ]-ci[1, ])
+    coverage_mat[, chain] <- chain_coverage
+    coverage_avg_length[, chain] <- chain_avg_length
+
+  }
+  rmse_chains[1, ] <- colMeans(rmse_mat)
+
+  df <- data.frame(rbind(rmse_chains, coverage_avg_length, coverage_mat), row.names = c("RMSE", "Length", "Coverage"))
+  colnames(df) <- sprintf("Chain %s",seq(1:(nchain)))
+
+  return(t(df))}
+
 .get.first.splits <- function(data_test, bart_fit, ndpost, nskip) {
   # rmse_mat <- .get_rmse_mat(data_test, bart_fit, ndpost, nskip)
   # n_c <- dim(rmse_mat)[2]-1
@@ -149,6 +198,49 @@
   split_mat$Chain <- split_mat$chain
   return(list(rmse_mat=rmse_mat, split_mat=split_mat))
 }
+
+.get_coverage_data <- function(data_train, data_test,n_tree, nskip, ndpost, nchain, fname, dir_data, run, restricted){
+
+  fname_csv_coverage <- paste0(fname, "_coverage.csv")
+  dir_csv_coverage <- file.path(dir_data, fname_csv_coverage)
+
+  if (file.exists(dir_csv_coverage)){
+    coverage_mat <- read.csv(dir_csv_coverage, header = TRUE)
+    coverage_mat <- coverage_mat[, 2:ncol(coverage_mat)]
+
+  } else{
+    x.train <- get.features(data_train)
+    y.train <- get.labels(data_train)
+    data_train <- c()
+    probs <-c(0.5, 0.1, 0.4,0.5)
+    if (restricted){
+      probs <-c(1-1e-5,1e-5,0,.5)
+    }
+    names(probs) <- c("birth_death", "change","swap","birth")
+    bart_fit <- bart(x.train = x.train,
+                     y.train = y.train,
+                     keeptrees = TRUE,
+                     verbose = TRUE,
+                     nskip = 0,
+                     keepevery = 1,
+                     ntree = n_tree,
+                     ndpost = ndpost+nskip,
+                     nchain = nchain,
+                     seed=run,
+                     proposalprobs=probs)
+    x.train <- c()
+    y.train <- c()
+
+
+
+
+    coverage_mat <- .get_coverage_mat(data_test = data_test, bart_fit = bart_fit,
+                              ndpost = ndpost, nskip = nskip, nchain = nchain)
+    write.csv(coverage_mat, dir_csv_coverage)
+  }
+  return(coverage_mat)
+}
+
 
 .get.label.name<-function(ds_name){
   return(str_to_title(str_replace(ds_name, "_", " ")))
