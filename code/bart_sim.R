@@ -20,7 +20,7 @@ option_list = list(
   make_option(c("-d", "--dataset"), type="character", default="abalone",
               help="dataset name", metavar="character"),
   make_option(c("-t", "--plot_type"), type="character", default="all",
-              help="plot type (rmse, converage or all)", metavar="character"),
+              help="plot type", metavar="character"),
   make_option(c( "--synthetic"), action="store_true",default=FALSE,
               help="make y synthetic", metavar="store_true"),
   make_option(c( "--restricted"), action="store_true",default=FALSE,
@@ -28,7 +28,7 @@ option_list = list(
   make_option(c("-n", "--n_d_p"), type="double", default=Inf,
               help="number of data points", metavar="double"),
   make_option(c("-p", "--n_features"), type="integer", default=1,
-              help="number of feature", metavar="integer"),
+              help="number of features (times the original number)", metavar="integer"),
   make_option(c("-b", "--n_burn"), type="integer", default=5000,
               help="number of burn-in", metavar="integer"),
   make_option(c("-c","--n_chains"), type="integer", default=8,
@@ -37,8 +37,6 @@ option_list = list(
               help="number of posterior samples", metavar="integer"),
   make_option(c("--n_tree"), type="integer", default=1,
               help="number of trees", metavar="integer"),
-  make_option(c("-a", "--alpha"), type="double", default=0.05,
-              help="alpha", metavar="double"),
   make_option(c("-r", "--run"), type="integer", default=1,
               help="run", metavar="integer")
 );
