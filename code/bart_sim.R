@@ -117,6 +117,42 @@ cumsum_rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_leg
   }
 }
 
+coverage_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_lab, synthetic, run, restricted, plot=FALSE){
+  data_all <- get_data(ds_name = ds_name, n = n, p = p, synthetic=synthetic, seed = 42)
+  data_train <- data_all[["train"]]
+  data_test <- data_all[["test"]]
+  y.train <- get.labels(data_train)
+  n <- length(y.train)
+  add_legend <- F
+  # y_lab <- "Density"
+  dir_data <- .get_dir_data(n_tree, ds_name, restricted)
+  dir_fig <- .get_dir_fig(n_tree, ds_name, restricted)
+  fname <- .get_fname(nskip = nskip,ndpost = ndpost, n=n,
+                      nchain = nchain, synthetic = synthetic, p=p, run=run)
+
+
+  coverage_data <- .get_coverage_data(data_train, data_test,n_tree, nskip,
+                                ndpost, nchain, fname, dir_data, run=run,
+                                restricted=restricted)
+  if (!plot){
+    fname <- NULL}
+
+  if (!is.null(fname)){
+    gg <- coverage_data  %>%  ggplot(aes(x=RMSE, y=Coverage, size=Length)) + geom_point() + theme_minimal() +
+      ggtitle(paste0("Dataset: ", .get.label.name(ds_name), "\nn: ", n))
+
+    dir_fig <- file.path("results", "figures")
+    dir_coverage <- file.path(dir_fig, "coverage")
+    .check_create(dir_coverage)
+    fname <- paste(ds_name, n, "tree", n_tree, sep="_")
+    fname_suf <- paste0(fname, ".png")
+    print(file.path(dir_coverage,fname_suf))
+    ggsave(file.path(dir_coverage,fname_suf), plot = gg, dpi=300, bg = "white")
+  }
+
+
+}
+
 rmse_plot <- function(ds_name, n,p, n_tree, nskip, ndpost, nchain,add_legend,y_lab, synthetic, run, restricted, plot=FALSE){
   data_all <- get_data(ds_name = ds_name, n = n, p = p, synthetic=synthetic, seed = 42)
   data_train <- data_all[["train"]]
@@ -540,6 +576,8 @@ gr_plot_data_points <- function(args){
   ggsave(file.path(dir_gr,fname), plot = gg, dpi=300, bg ="white")
 }
 
+
+
 flips_plot <- function(args){
   n_tree <- 1
   nskip <- args$n_burn
@@ -627,6 +665,31 @@ flips_plot <- function(args){
 
 }
 
+plot.coverage <- function(){
+  df <- read.csv("results/coverage_95.csv")
+  colnames(df) <- c("dataset", "n", "overlap","nonoverlap", "run")
+  df$Dataset <- .get.label.name(df$dataset)
+  plt.df <- df %>% group_by(Dataset, n) %>%
+    summarize(avg=mean(overlap), n_rep=n(), sd=sd(overlap), se=sd/sqrt(n_rep))
+
+  
+  gg <- ggplot(plt.df, aes(x=n, y=avg, group=Dataset, color=Dataset)) +   geom_line(size=1.4) +
+    geom_point(size=4) +   geom_errorbar(aes(ymin=avg-2*se, ymax=avg+2*se), width=0.2, size=1.2,
+                                         position=position_dodge(0.0)) +
+    theme_minimal() + xlab("Number of Data Points") + ylab("% Overlap") +
+    #geom_hline(yintercept=1.1, linetype='dotted', col = 'red', size=2)+
+    # annotate("text", x = 3.5, y = 1.11, label = "Convergence\nThreshold", vjust = -0.5)+
+    theme(text = element_text(size = TEXT_SIZE),  legend.position = pos) +
+    scale_colour_manual(values=COLORS) + scale_x_continuous(trans = 'log10',
+                                                            breaks = trans_breaks('log10', function(x) 10^x),
+                                                            labels = trans_format('log10', math_format(10^.x)))
+  dir_gr <- file.path("results","figures", paste("trees",200, sep="_"))
+  .check_create(dir_gr)
+  
+  ggsave(file.path(dir_gr,"coverage_95.png"), plot = gg, dpi=300, bg ="white")
+  
+}
+
 main <- function(args){
   ds_name <- args$dataset
   n <- args$n_d_p
@@ -674,7 +737,6 @@ main <- function(args){
     first_split_plot(ds_name = ds_name, n = n,p = p, n_tree = n_tree
                      , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = add_legend,y_lab = y_lab, synthetic = synthetic, run=run, restricted=restricted, plot=T)}
-
   if (plot_type == "cusum"){
     cumsum_rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
@@ -702,72 +764,9 @@ main <- function(args){
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T)
   }
-  if (plot_type == "rmse_paper"){
-    y_lab  <- "Chains"
-    rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
-    rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
-    rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
-    rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
 
-    rmse_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=T, plot = T)
-    rmse_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T, plot = T)
-    rmse_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
-    rmse_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
-  }
-  if (plot_type == "first_split_paper"){
-    y_lab  <- "Count"
-    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 200
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
-    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 200
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
-    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 200
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
-    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 200
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
-    
-    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=T, plot = T)
-    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=T, plot = T)
-    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=T, plot = T)
-    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
-              , nskip = nskip, ndpost = ndpost, nchain=nchain,
-              add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=T, plot = T)
-
-    first_split_plot(ds_name = "breast_tumor", n = 200,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = T,y_lab = y_lab, synthetic = FALSE, run=2, restricted=F, plot = T)
-    first_split_plot(ds_name = "breast_tumor", n = Inf,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = "", synthetic = FALSE, run=2, restricted=F, plot = T)
-    first_split_plot(ds_name = "california_housing", n = 200,p = 1, n_tree = 1
-      , nskip = nskip, ndpost = ndpost, nchain=nchain,
-                     add_legend = F,y_lab = y_lab, synthetic = FALSE, run=3, restricted=F, plot = T)
-    first_split_plot(ds_name = "california_housing", n = Inf,p = 1, n_tree = 1
+  if (plot_type == "coverage"){
+    coverage_plot(ds_name = ds_name, n = Inf,p = 1, n_tree = n_tree
       , nskip = nskip, ndpost = ndpost, nchain=nchain,
                      add_legend = F,y_lab = "", synthetic = FALSE, run=3, restricted=F, plot = T)
   }
