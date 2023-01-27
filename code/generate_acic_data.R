@@ -3,7 +3,7 @@
 # Read in 2019 contest data
 data_2019 <- read.csv("~/Desktop/bart-sims/data/testdataset5.csv")
 
-out_2019 <- read.csv("~Desktop/bart-sims/data/testdataset5_cf.csv")
+out_2019 <- read_csv("~/Desktop/bart-sims/data/testdataset5_cf.csv")
 data_2019$Ytrue <- ifelse(data_2019$A, out_2019$EY1_i, out_2019$EY0_i)
 write.csv(data_2019, "~/Desktop/bart-sims/data/ACIC2019.csv")
 

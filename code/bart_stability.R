@@ -30,13 +30,13 @@ get.features <- function(data){
     cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
     X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
     y <- rowSums(X[, 1:q])
-    
-    
-    
+
+
+
   }
-  
+
   return(list(X=X, y=y))
-  
+
 }
 
 get_data <- function(dgp,n, q, rho=0.05, seed=0){
@@ -51,6 +51,35 @@ get_data <- function(dgp,n, q, rho=0.05, seed=0){
     data_all <- list(train=cbind(data_train$X, data_train$y),
                      test=cbind(data_test$X, data_test$y))
     return(data_all)
+
+}
+
+# Assumes that the dgp argument is in c("2016","2017","2018","2019")
+# Throws an error if the n + 200 > the number of rows in the data
+get_data_acic <- function(dgp,n){
+
+  train_n <- n
+  test_n <- 200
+
+  if (!(dgp %in% c("2016","2017","2018","2019"))) {
+    stop("Not a supported dgp")
+  }
+
+  data <- read.csv(paste0("data/ACIC",dgp,".csv"))
+
+  if (nrow(data) < train_n+test_n) {
+    stop("N is too large for the current dgp")
+  }
+
+  data_train <- data[1:train_n,-which(colnames(data) == "Ytrue")]
+  data_test <- data[(train_n+1):(train_n+200),-which(colnames(data) == "Y")]
+
+  colnames(data_train)[which(colnames(data_train) == "Y")] <- "y"
+  colnames(data_test)[which(colnames(data_test) == "Ytrue")] <- "y"
+
+  data_all <- list(train=data_train,
+                   test=data_test)
+  return(data_all)
 
 }
 
@@ -80,7 +109,7 @@ bart_sim <- function(dgp, nchain, n, total_ndpost, seed){
                    nchain = nchain,
                    seed = seed,
                    proposalprobs=probs)
-  
+
   point_preds_bart <-  bart_fit$yhat.test.mean
   rmse <- sqrt(mean((point_preds_bart-y.test)^2))
   posterior_bart <- bart_fit$yhat.test
@@ -88,8 +117,8 @@ bart_sim <- function(dgp, nchain, n, total_ndpost, seed){
   average_length <- mean(quantiles[2, ] - quantiles[1, ])
   average_coverage <- mean(y.test > quantiles[1, ] & y.test < quantiles[2, ])
   return(list(rmse=rmse, coverage=average_coverage, interval_length=average_length))
-  
-  
+
+
 }
 
 main <- function(args){
@@ -101,41 +130,41 @@ main <- function(args){
   colnames(results) <- column_names
   for (n in c(100, 1000, 10000, 100000)){
         for (run in 1:runs){
-          
+
     bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-      
+
     bart_1 <- bart_sim(nchain=1,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
     results_1 <- c(bart_1$rmse, bart_1$coverage, bart_1$interval_length, n, run, 1)
-    
+
     bart_5 <- bart_sim(nchain=8,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
     results_5 <- c(bart_5$rmse, bart_5$coverage, bart_5$interval_length, n, run, 8)
-    
+
     bart_10 <- bart_sim(nchain=20,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
     results_10 <- c(bart_10$rmse, bart_10$coverage, bart_10$interval_length, n, run, 20)
-    
+
     combined_results <- rbind(results_1, results_5, results_10)
     results <- rbind(results, combined_results, make.row.names=FALSE)
-    
-    
-    
-    
-    
+
+
+
+
+
       }}
   colnames(results) <- column_names
   file_name <- here(file.path("results", paste("dgp", dgp,"chain_analysis.csv", sep = '_')))
   write.csv(results, file_name, row.names = FALSE, sep = ",")
-  
+
   return(results)
-  
-  
-  
+
+
+
 }
 
 
 if (getOption('run.main', default=TRUE)) {
   parser <- OptionParser(option_list=option_list);
   args <- parse_args(parser);
-  
+
   print(main(args))
 }
 
