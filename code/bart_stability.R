@@ -3,6 +3,7 @@ library(MASS)
 library(purrr)
 library(optparse)
 library(here)
+library(mvtnorm)
 
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
@@ -24,19 +25,27 @@ get.features <- function(data){
 }
 
 .generate_data <- function(dgp, n, q, rho){
+
   if (dgp == "sum"){
     cov_q <- diag(1, q)
     cov_q_q <- diag(rho, q)
     cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
     X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
     y <- rowSums(X[, 1:q])
-    
-    
-    
   }
-  
+  if (dgp == "rockova"){
+    X <- t(replicate(n, runif(q))) # draw samples
+    
+    y <- .rockova_dgp(X, q)
+  }
   return(list(X=X, y=y))
-  
+}
+
+.rockova_dgp <- function(X, q){
+  first_term <- 1
+  second_term <- rowSums((-1)^(1:q) * (X[, 1:q] >= 1/2))
+  third_term <- rowSums((X[, 1:q] - 1/2)^2)
+  return (first_term + 1/q * ( second_term * third_term))
 }
 
 get_data <- function(dgp,n, q, rho=0.05, seed=0){
@@ -100,6 +109,8 @@ main <- function(args){
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
   for (n in c(100, 1000, 10000, 100000)){
+    #for (n in c(100, 1000, 10000)){
+      
         for (run in 1:runs){
           
     bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
