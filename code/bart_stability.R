@@ -3,6 +3,7 @@ library(MASS)
 library(purrr)
 library(optparse)
 library(here)
+library(onehot)
 
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
@@ -39,48 +40,49 @@ get.features <- function(data){
 
 }
 
-get_data <- function(dgp,n, q, rho=0.05, seed=0){
+get_data <- function(dgp,n, q=10, rho=0.05, seed=0){
 
     train_n <- n
     test_n <- 200
     set.seed(seed)
-    data_train <- .generate_data(dgp, train_n, q, rho)
-    data_train$y <- data_train$y + 2 * rnorm(train_n)
-    data_test <- .generate_data(dgp, test_n, q, rho)
 
-    data_all <- list(train=cbind(data_train$X, data_train$y),
-                     test=cbind(data_test$X, data_test$y))
+    if ((dgp %in% c("2016","2017","2018","2019"))) {
+      data <- read.csv(paste0("data/ACIC",dgp,".csv"))
+
+      # Shuffle the data set, so the train and test set are disjoint
+      # but we break any unintended clustering of observations
+      data <- data[sample(1:nrow(data), size = train_n+test_n, replace = FALSE),]
+      encoding <- onehot::onehot(data, stringsAsFactors = TRUE, max_levels = 100)
+      data <- predict(encoding, data)
+
+      if (nrow(data) < train_n+test_n) {
+        stop("N is too large for the current dgp")
+      }
+
+      data_train <- data[1:train_n,-which(colnames(data) == "Ytrue")]
+      data_test <- data[(train_n+1):(train_n+200),-which(colnames(data) == "Y")]
+
+      colnames(data_train)[which(colnames(data_train) == "Y")] <- "y"
+      colnames(data_test)[which(colnames(data_test) == "Ytrue")] <- "y"
+
+      data_train <- cbind(data_train[,-which(colnames(data_train) == "y")],
+                          data_train[,which(colnames(data_train) == "y")])
+
+      data_test <- cbind(data_test[,-which(colnames(data_test) == "y")],
+                         data_test[,which(colnames(data_test) == "y")])
+
+
+      data_all <- list(train=as.matrix(data_train),
+                       test=as.matrix(data_test))
+    } else {
+      data_train <- .generate_data(dgp, train_n, q, rho)
+      data_train$y <- data_train$y + 2 * rnorm(train_n)
+      data_test <- .generate_data(dgp, test_n, q, rho)
+
+      data_all <- list(train=cbind(data_train$X, data_train$y),
+                       test=cbind(data_test$X, data_test$y))
+    }
     return(data_all)
-
-}
-
-# Assumes that the dgp argument is in c("2016","2017","2018","2019")
-# Throws an error if the n + 200 > the number of rows in the data
-get_data_acic <- function(dgp,n){
-
-  train_n <- n
-  test_n <- 200
-
-  if (!(dgp %in% c("2016","2017","2018","2019"))) {
-    stop("Not a supported dgp")
-  }
-
-  data <- read.csv(paste0("data/ACIC",dgp,".csv"))
-
-  if (nrow(data) < train_n+test_n) {
-    stop("N is too large for the current dgp")
-  }
-
-  data_train <- data[1:train_n,-which(colnames(data) == "Ytrue")]
-  data_test <- data[(train_n+1):(train_n+200),-which(colnames(data) == "Y")]
-
-  colnames(data_train)[which(colnames(data_train) == "Y")] <- "y"
-  colnames(data_test)[which(colnames(data_test) == "Ytrue")] <- "y"
-
-  data_all <- list(train=data_train,
-                   test=data_test)
-  return(data_all)
-
 }
 
 bart_sim <- function(dgp, nchain, n, total_ndpost, seed){
