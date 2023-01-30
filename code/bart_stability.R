@@ -4,6 +4,7 @@ library(purrr)
 library(optparse)
 library(here)
 library(mvtnorm)
+library(rpart)
 
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
@@ -24,7 +25,7 @@ get.features <- function(data){
   # return(data %>% dplyr::select(-last_col()))
 }
 
-.generate_data <- function(dgp, n, q, rho){
+.generate_data <- function(dgp, n, q, rho, tree){
 
   if (dgp == "sum"){
     cov_q <- diag(1, q)
@@ -34,9 +35,15 @@ get.features <- function(data){
     y <- rowSums(X[, 1:q])
   }
   if (dgp == "rockova"){
-    X <- t(replicate(n, runif(q))) # draw samples
-    
+    X <- t(replicate(n, runif(q)))# draw samples
     y <- .rockova_dgp(X, q)
+  }
+  if (dgp == "tree"){
+    cov_q <- diag(1, q)
+    cov_q_q <- diag(rho, q)
+    cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
+    X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
+    y <- .tree_dgp(X, tree)
   }
   return(list(X=X, y=y))
 }
@@ -48,14 +55,26 @@ get.features <- function(data){
   return (first_term + 1/q * ( second_term * third_term))
 }
 
+.get_tree<- function(q){
+  data_tree <- .generate_data("sum", 1000, q, 0)
+  tree <- rpart(data_tree$y ~ ., data = as.data.frame(data_tree$X), method = "anova")
+  
+}
+
+.tree_dgp <- function(X, tree){
+
+  return(predict(tree, as.data.frame(X)))
+}
+
 get_data <- function(dgp,n, q, rho=0.05, seed=0){
 
     train_n <- n
-    test_n <- 200
+    test_n <- 500
     set.seed(seed)
-    data_train <- .generate_data(dgp, train_n, q, rho)
+    tree <- .get_tree(q)
+    data_train <- .generate_data(dgp, train_n, q, rho,tree)
     data_train$y <- data_train$y + 2 * rnorm(train_n)
-    data_test <- .generate_data(dgp, test_n, q, rho)
+    data_test <- .generate_data(dgp, test_n, q, rho,tree)
 
     data_all <- list(train=cbind(data_train$X, data_train$y),
                      test=cbind(data_test$X, data_test$y))
@@ -108,8 +127,8 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  for (n in c(100, 1000, 10000, 100000)){
-    #for (n in c(100, 1000, 10000)){
+  #for (n in c(100, 1000, 10000, 100000)){
+    for (n in c(100, 1000, 10000)){
       
         for (run in 1:runs){
           
