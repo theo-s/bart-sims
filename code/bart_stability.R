@@ -73,9 +73,6 @@ get_data <- function(dgp,n, q, rho=0.05, seed=0){
     test_n <- 500
     set.seed(seed)
     tree <- .get_tree(q)
-    data_train <- .generate_data(dgp, train_n, q, rho,tree)
-    data_train$y <- data_train$y + 2 * rnorm(train_n)
-    data_test <- .generate_data(dgp, test_n, q, rho,tree)
 
     if ((dgp %in% c("2016","2017","2018","2019"))) {
       data <- read.csv(paste0("data/ACIC",dgp,".csv"))
@@ -161,7 +158,7 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  for (n in c(100, 1000, 10000, 100000)){
+  for (n in c(100, 500, 2000)){
         for (run in 1:runs){
 
     bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
@@ -172,8 +169,8 @@ main <- function(args){
     bart_5 <- bart_sim(nchain=8,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
     results_5 <- c(bart_5$rmse, bart_5$coverage, bart_5$interval_length, n, run, 8)
 
-    bart_10 <- bart_sim(nchain=20,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-    results_10 <- c(bart_10$rmse, bart_10$coverage, bart_10$interval_length, n, run, 20)
+    bart_10 <- bart_sim(nchain=30,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
+    results_10 <- c(bart_10$rmse, bart_10$coverage, bart_10$interval_length, n, run, 30)
 
     combined_results <- rbind(results_1, results_5, results_10)
     results <- rbind(results, combined_results, make.row.names=FALSE)
