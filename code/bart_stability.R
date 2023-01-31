@@ -7,6 +7,7 @@ library(mvtnorm)
 library(onehot)
 library(rpart)
 
+
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
               help="data generating process", metavar="character"),
@@ -47,6 +48,24 @@ get.features <- function(data){
     y <- .tree_dgp(X, tree)
   }
   return(list(X=X, y=y))
+}
+
+.rockova_dgp <- function(X, q){
+  first_term <- 1
+  second_term <- rowSums((-1)^(1:q) * (X[, 1:q] >= 1/2))
+  third_term <- rowSums((X[, 1:q] - 1/2)^2)
+  return (first_term + 1/q * ( second_term * third_term))
+}
+
+.get_tree<- function(q){
+  data_tree <- .generate_data("sum", 1000, q, 0)
+  tree <- rpart(data_tree$y ~ ., data = as.data.frame(data_tree$X), method = "anova")
+
+}
+
+.tree_dgp <- function(X, tree){
+
+  return(predict(tree, as.data.frame(X)))
 }
 
 .rockova_dgp <- function(X, q){
@@ -158,7 +177,9 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  for (n in c(100, 500, 2000)){
+  #for (n in c(100, 1000, 10000, 100000)){
+    for (n in c(100, 1000, 10000)){
+
         for (run in 1:runs){
 
     bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
