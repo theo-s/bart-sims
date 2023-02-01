@@ -58,7 +58,7 @@ get.features <- function(data){
 }
 
 .get_tree<- function(q){
-  data_tree <- .generate_data("sum", 1000, q, 0)
+  data_tree <- .generate_data("sum", 1000, q, 0, 0)
   tree <- rpart(data_tree$y ~ ., data = as.data.frame(data_tree$X), method = "anova")
 
 }
@@ -91,7 +91,6 @@ get_data <- function(dgp,n, q, rho=0.05, seed=0){
     train_n <- n
     test_n <- 500
     set.seed(seed)
-    tree <- .get_tree(q)
 
     if ((dgp %in% c("2016","2017","2018","2019"))) {
       data <- read.csv(paste0("data/ACIC",dgp,".csv"))
@@ -122,9 +121,10 @@ get_data <- function(dgp,n, q, rho=0.05, seed=0){
       data_all <- list(train=as.matrix(data_train),
                        test=as.matrix(data_test))
     } else {
-      data_train <- .generate_data(dgp, train_n, q, rho)
+      tree <- .get_tree(q)
+      data_train <- .generate_data(dgp, train_n, q, rho, tree)
       data_train$y <- data_train$y + 2 * rnorm(train_n)
-      data_test <- .generate_data(dgp, test_n, q, rho)
+      data_test <- .generate_data(dgp, test_n, q, rho, tree)
 
       data_all <- list(train=cbind(data_train$X, data_train$y),
                        test=cbind(data_test$X, data_test$y))
@@ -177,8 +177,9 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  #for (n in c(100, 1000, 10000, 100000)){
-    for (n in c(100, 1000, 10000)){
+  file_name <- here(file.path("results", paste("dgp", dgp,"chain_analysis.csv", sep = '_')))
+  for (n in c(100, 1000, 10000, 100000)){
+  #  for (n in c(100, 1000, 10000)){
 
         for (run in 1:runs){
 
@@ -195,6 +196,9 @@ main <- function(args){
 
     combined_results <- rbind(results_1, results_5, results_10)
     results <- rbind(results, combined_results, make.row.names=FALSE)
+    #colnames(results) <- column_names
+    write.csv(results, file_name, row.names = FALSE)
+
 
 
 
@@ -202,7 +206,6 @@ main <- function(args){
 
       }}
   colnames(results) <- column_names
-  file_name <- here(file.path("results", paste("dgp", dgp,"chain_analysis.csv", sep = '_')))
   write.csv(results, file_name, row.names = FALSE, sep = ",")
 
   return(results)
