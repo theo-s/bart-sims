@@ -193,7 +193,7 @@ main <- function(args){
       
       combined_results <- list(results_1, results_8, results_20)
       
-      file_name <- here(file.path("results", paste("dgp", dgp,"run",run,"n",n,"coverage.csv", sep = '_')))
+      file_name <- here(file.path("results/coverage/", paste("dgp", dgp,"run",run,"n",n,"coverage.RDS", sep = '_')))
       saveRDS(combined_results, file_name)
     }}
   return(results)
