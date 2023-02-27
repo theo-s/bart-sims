@@ -52,19 +52,19 @@ get.features <- function(data){
     cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
     X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
     y <- rowSums(X[, 1:q])
-  } else if (dgp == "athey_low"){
+  } else if (dgp == "atheylow"){
     X <- matrix(rnorm(n * 10), nrow = n, ncol = 10)
     fac <- rnorm(n)
     X <- X * sqrt(1 - rho) + fac * sqrt(rho)
     X <- pnorm(X)
     y <- athey_outcome(X)
-  } else if (dgp == "athey_high"){
-    X <- matrix(rnorm(n * 100), nrow = n, ncol = 100)
+  } else if (dgp == "atheyhigh"){
+    X <- matrix(rnorm(n * 50), nrow = n, ncol = 50)
     fac <- rnorm(n)
     X <- X * sqrt(1 - rho) + fac * sqrt(rho)
     X <- pnorm(X)
     y <- athey_outcome(X)
-  } else if (dgp == "piecewise_linear"){
+  } else if (dgp == "piecewise"){
     X <- matrix(rnorm(n * 20), nrow = n, ncol = 20)
     fac <- rnorm(n)
     X <- X * sqrt(1 - rho) + fac * sqrt(rho)
@@ -79,7 +79,7 @@ get.features <- function(data){
 get_data <- function(dgp,n, q=10, rho=0.05, seed=0){
   
   train_n <- n
-  test_n <- 200
+  test_n <- 1000
   set.seed(seed)
   
   if ((dgp %in% c("2016","2017","2018","2019"))) {
@@ -116,9 +116,9 @@ get_data <- function(dgp,n, q=10, rho=0.05, seed=0){
     # Modify noise level based on the variance of the outcome
     if (dgp == "sum") {
       noise_sd <- 2
-    } else if (dgp %in% c("athey_low","athey_high")) {
+    } else if (dgp %in% c("atheylow","atheyhigh")) {
       noise_sd <- 1
-    } else if (gdp == "piecewise_linear") {
+    } else if (dgp == "piecewise") {
       noise_sd <- sd(data_train$y)
     }
     data_train$y <- data_train$y + noise_sd * rnorm(train_n)
@@ -177,19 +177,40 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  for (n in c(100, 1000, 10000, 100000)){
+  for (n in c(100,1000)){
     for (run in 1:runs){
       
       bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
       
       bart_1 <- bart_sim(nchain=1,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-      results_1 <- c(bart_1$rmse, bart_1$coverage, bart_1$interval_length, n, run, 1)
+      results_1 <- list("rmse" = bart_1$rmse, 
+                        "empirical_cov" = bart_1$coverage, 
+                        "ci_upper" = bart_1$upper,
+                        "ci_lower" = bart_1$lower,
+                        "true_y" = bart_1$true_outcome,
+                        "n" = n,
+                        "run" = run,
+                        "nchain" = 1)
       
       bart_8 <- bart_sim(nchain=8,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-      results_8 <- c(bart_8$rmse, bart_8$coverage, bart_8$interval_length, n, run, 8)
+      results_8 <- list("rmse" = bart_8$rmse, 
+                        "empirical_cov" = bart_8$coverage, 
+                        "ci_upper" = bart_8$upper,
+                        "ci_lower" = bart_8$lower,
+                        "true_y" = bart_8$true_outcome,
+                        "n" = n,
+                        "run" = run,
+                        "nchain" = 8)
       
       bart_20 <- bart_sim(nchain=20,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-      results_20 <- c(bart_20$rmse, bart_20$coverage, bart_20$interval_length, n, run, 20)
+      results_20 <- list("rmse" = bart_20$rmse, 
+                        "empirical_cov" = bart_20$coverage, 
+                        "ci_upper" = bart_20$upper,
+                        "ci_lower" = bart_20$lower,
+                        "true_y" = bart_20$true_outcome,
+                        "n" = n,
+                        "run" = run,
+                        "nchain" = 20)
       
       combined_results <- list(results_1, results_8, results_20)
       
