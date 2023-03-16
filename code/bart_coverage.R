@@ -231,9 +231,9 @@ main <- function(args){
                         "true_y" = bart_5$true_outcome,
                         "n" = n,
                         "run" = run,
-                        "nchain" = 20)
+                        "nchain" = 5)
 
-      combined_results <- list(results_1, bart_2, bart_5)
+      combined_results <- list(results_1, results_2, results_5)
 
       file_name <- here(file.path("results/coverage/", paste("dgp", dgp,"run",run,"n",n,"coverage.RDS", sep = '_')))
       saveRDS(combined_results, file_name)
