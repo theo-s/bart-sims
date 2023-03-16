@@ -5,6 +5,7 @@ library(optparse)
 library(here)
 library(onehot)
 library(dgpoix)
+library(Rforestry)
 
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
