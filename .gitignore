@@ -1,3 +1,7 @@
 .Rproj.user
 figures/aistats/
 data/aistats/
+
+results/coverage/*.RDS
+results/coverage2/*.RDS
+results/coverage3/*.RDS
