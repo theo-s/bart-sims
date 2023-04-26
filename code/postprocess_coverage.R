@@ -1,5 +1,6 @@
 library(ggplot2)
 library(dplyr)
+library(ggeasy)
 
 # Unused for now
 calc_winkler <- function(Y,
@@ -78,7 +79,8 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
 
   results[-1,] %>%
     group_by(n, nchain, exp) %>%
-    summarise(reps_completed = max(run)) -> num_runs
+    summarise(reps_completed = length(unique(run)),
+              max_rep = max(run)) -> num_runs
   print(dgp)
   print(num_runs)
 
@@ -87,16 +89,17 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
     group_by(n, nchain, exp) %>%
     summarise(mean_rmse = mean(rmse),
               mean_coverage = mean(cov),
-              sd_coverage = sd(cov)) %>%
+              sd_coverage = sd(cov)/10) %>%
     select(n, nchain, mean_coverage,sd_coverage) %>%
     mutate(nchain = as.factor(nchain)) %>%
     ggplot(aes(x = n, y= mean_coverage, color = nchain))+
     geom_line()+
-    geom_errorbar(aes(ymin = mean_coverage - sd_coverage, ymax = mean_coverage + sd_coverage), width = 3e3) +
+    geom_errorbar(aes(ymin = mean_coverage - 1.96*sd_coverage, ymax = mean_coverage + 1.96*sd_coverage), width = 3e3) +
     labs(y = "Empirical Coverage (1000 test pts)", title = paste0("DGP: ",dgp))+
     geom_hline(yintercept = .95,linetype="dashed",
                color = "red")+
     theme_classic() -> plot_i
+  
   all_plots[[iteration]] = plot_i
   ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"coverage.pdf"), height = 4, width = 6)
 
@@ -105,7 +108,12 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
 
 library(gridExtra)
 
-p_final = grid.arrange(all_plots[[1]],all_plots[[2]],
-             all_plots[[3]],all_plots[[4]],
-             all_plots[[5]],all_plots[[6]], nrow = 3)
-ggsave(p_final,filename = paste0("results/figures/coverage/all_coverages.pdf"), height = 11, width = 8)
+p_final = grid.arrange(all_plots[[1]]+theme(legend.position ="none"),
+                       all_plots[[2]]+theme(legend.position ="none",axis.title.y=element_blank()),
+                       all_plots[[3]]+theme(axis.title.y=element_blank()),
+                       all_plots[[4]]+theme(legend.position ="none"),
+                       all_plots[[5]]+theme(legend.position ="none",axis.title.y=element_blank()),
+                       all_plots[[6]]+theme(axis.title.y=element_blank()), 
+                       widths =c(4,4,4.75),
+                       ncol = 3)
+ggsave(p_final,filename = paste0("results/figures/coverage/all_coverages.pdf"), height = 7, width = 11)

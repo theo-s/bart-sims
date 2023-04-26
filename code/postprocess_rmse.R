@@ -82,16 +82,18 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
     group_by(n, nchain, exp) %>%
     summarise(mean_rmse = mean(rmse),
               mean_coverage = mean(cov),
-              sd_coverage = sd(cov),
+              sd_coverage = sd(cov)/10,
               mean_rmse = mean(rmse),
-              sd_rmse = sd(rmse)) %>%
+              sd_rmse = sd(rmse)/10) %>%
     group_by(n) %>%
     select(n, nchain, mean_rmse,sd_rmse) %>%
     mutate(nchain = as.factor(nchain)) %>%
     ggplot(aes(x = n, y= mean_rmse, color = nchain))+
-    geom_line()+
-    geom_errorbar(aes(ymin = mean_rmse - sd_rmse, ymax = mean_rmse + sd_rmse), width = 3e3) +
+    geom_line(aes(linetype = nchain))+
+    scale_linetype_manual(values = c("1" = "dashed", "2" = "solid", "5" = "solid"))+
+    geom_errorbar(aes(ymin = mean_rmse - 1.96*sd_rmse, ymax = mean_rmse + 1.96*sd_rmse), width = 3e3) +
     labs(y = "RMSE/RMSE(1 chain) (1000 test pts)", title = paste0("DGP: ",dgp))+
+    ylim(.7,1.1)+
     theme_classic() -> plot_i
   all_plots[[iteration]] = plot_i
   ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"rmse.pdf"), height = 4, width = 6)
@@ -101,7 +103,12 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
 
 library(gridExtra)
 
-grid.arrange(all_plots[[1]],all_plots[[2]],
-             all_plots[[3]],all_plots[[4]],
-             all_plots[[5]],all_plots[[6]], nrow = 3)->p_final
-ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 11, width = 8)
+p_final = grid.arrange(all_plots[[1]]+theme(legend.position ="none"),
+                       all_plots[[2]]+theme(legend.position ="none",axis.title.y=element_blank()),
+                       all_plots[[3]]+theme(axis.title.y=element_blank()),
+                       all_plots[[4]]+theme(legend.position ="none"),
+                       all_plots[[5]]+theme(legend.position ="none",axis.title.y=element_blank()),
+                       all_plots[[6]]+theme(axis.title.y=element_blank()), 
+                       widths =c(4,4,4.75),
+                       ncol = 3)
+ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 7, width = 11)
