@@ -1,5 +1,8 @@
+# If needed, install vthemes from Yu-Group website
+# devtools::install_github("Yu-Group/vthemes")
 library(ggplot2)
 library(dplyr)
+library(vthemes)
 
 all_plots = list()
 
@@ -90,13 +93,21 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
     mutate(nchain = as.factor(nchain)) %>%
     ggplot(aes(x = n, y= mean_rmse, color = nchain))+
     geom_line(aes(linetype = nchain))+
+    geom_point(aes(color = nchain))+
     scale_linetype_manual(values = c("1" = "dashed", "2" = "solid", "5" = "solid"))+
-    geom_errorbar(aes(ymin = mean_rmse - 1.96*sd_rmse, ymax = mean_rmse + 1.96*sd_rmse), width = 3e3) +
+    geom_errorbar(aes(ymin = mean_rmse - 1.96*sd_rmse, ymax = mean_rmse + 1.96*sd_rmse, color = nchain), width = 0) +
     labs(y = "RMSE/RMSE(1 chain) (1000 test pts)", title = paste0("DGP: ",dgp))+
-    ylim(.7,1.1)+
-    theme_classic() -> plot_i
+    scale_color_manual(values = c("1"="turquoise1", "2"="steelblue1", "5"="royalblue2"))+
+    vthemes::theme_vmodern() +
+    theme(axis.line = element_line(color='black'),
+          panel.background = element_rect(fill = 'white', color = 'white'),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          axis.title=element_text(size=6))+
+    ylim(.7,1.1) -> plot_i
   all_plots[[iteration]] = plot_i
-  ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"rmse.pdf"), height = 4, width = 6)
+  ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"rmse.pdf"), height = 2.5, width = 3)
 
   iteration <- iteration+1
 }
@@ -111,4 +122,4 @@ p_final = grid.arrange(all_plots[[1]]+theme(legend.position ="none"),
                        all_plots[[6]]+theme(axis.title.y=element_blank()), 
                        widths =c(4,4,4.75),
                        ncol = 3)
-ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 7, width = 11)
+ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 4, width = 7)
