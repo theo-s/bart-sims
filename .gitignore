@@ -5,3 +5,7 @@ data/aistats/
 results/coverage/*.RDS
 results/coverage2/*.RDS
 results/coverage3/*.RDS
+results/coverage_old/coverage/*.RDS
+.Rhistory
+Rplots.pdf
+
