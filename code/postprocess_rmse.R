@@ -33,7 +33,7 @@ calc_winkler <- function(Y,
 }
 
 iteration = 1
-for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
+for (dgp in c("sum","high", "low", "piecewise", "tree", "lss_")) {
 
 
   results <- data.frame(n = NA,
@@ -70,6 +70,10 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
     }
   }
 
+  if(dgp=="lss_") {
+    dgp = "lss"
+  }
+  
   results[-1,] %>%
     group_by(n, nchain, exp) %>%
     summarise(reps_completed = max(run)) -> num_runs
@@ -89,24 +93,27 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
               mean_rmse = mean(rmse),
               sd_rmse = sd(rmse)/10) %>%
     group_by(n) %>%
-    select(n, nchain, mean_rmse,sd_rmse) %>%
+    dplyr::select(n, nchain, mean_rmse,sd_rmse) %>%
     mutate(nchain = as.factor(nchain)) %>%
     ggplot(aes(x = n, y= mean_rmse, color = nchain))+
     geom_line(aes(linetype = nchain))+
     geom_point(aes(color = nchain))+
-    scale_linetype_manual(values = c("1" = "dashed", "2" = "solid", "5" = "solid"))+
+    scale_linetype_manual(values = c("1" = "dashed", "2" = "solid", "5" = "solid"), name = "Chains")+
     geom_errorbar(aes(ymin = mean_rmse - 1.96*sd_rmse, ymax = mean_rmse + 1.96*sd_rmse, color = nchain), width = 0) +
-    labs(y = "RMSE/RMSE(1 chain) (1000 test pts)", title = paste0("DGP: ",dgp))+
-    scale_color_manual(values = c("1"="turquoise1", "2"="steelblue1", "5"="royalblue2"))+
+    labs(y = "Relative RMSE", title = paste0("",dgp))+
+    scale_color_manual(values = c("1"="turquoise1", "2"="steelblue1", "5"="royalblue2"), name = "Chains")+
     vthemes::theme_vmodern() +
     theme(axis.line = element_line(color='black'),
           panel.background = element_rect(fill = 'white', color = 'white'),
           panel.grid.major = element_blank(),
+          text = element_text(family = "Times"),
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           axis.title=element_text(size=6))+
-    ylim(.7,1.1) -> plot_i
+    scale_x_continuous(labels = function(x){return(paste0(as.character(x/1e3), "K"))})+
+    scale_y_continuous(limits = c(.7,1.01), labels = function(x){return(paste0(as.character(x*100), "%"))})-> plot_i
   all_plots[[iteration]] = plot_i
+
   ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"rmse.pdf"), height = 2.5, width = 3)
 
   iteration <- iteration+1
@@ -120,6 +127,6 @@ p_final = grid.arrange(all_plots[[1]]+theme(legend.position ="none"),
                        all_plots[[4]]+theme(legend.position ="none"),
                        all_plots[[5]]+theme(legend.position ="none",axis.title.y=element_blank()),
                        all_plots[[6]]+theme(axis.title.y=element_blank()), 
-                       widths =c(4,4,4.75),
+                       widths =c(4,4,5.5),
                        ncol = 3)
-ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 4, width = 7)
+ggsave(p_final,filename = paste0("results/figures/coverage/all_rmse.pdf"), height = 5, width = 8)

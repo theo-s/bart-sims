@@ -43,6 +43,33 @@ get.features <- function(data){
     cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
     X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
     y <- X[,1]*X[,2]
+  } else if (dgp == "linear_add") {
+    cov_q <- diag(1, q)
+    cov_q_q <- diag(rho, q)
+    cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
+    X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
+    y <- .2*X[,1]-X[,2]+.6*X[,3]-.9*X[,4]+.85*X[,5]
+  } else if (dgp == "smooth_add") {
+    cov_q <- diag(1, q)
+    cov_q_q <- diag(rho, q)
+    cov_matrix <- cbind(rbind(cov_q, cov_q_q), rbind(cov_q_q, cov_q))
+    X <- mvrnorm(n = n, mu = rep(0, 2*q), Sigma = cov_matrix)
+    y <- .2*(X[,1])^(2)-(X[,2])+.6*cos(X[,3])-.9*sqrt(abs(X[,4]))+.85*sin(X[,5])
+  } else if (dgp == "tree_add") {
+    X <- data.frame(matrix(rnorm(1000*10), ncol = 10))
+    
+    tree_1 <- loadForestry("code/saved_tree1.RDS")
+    p_1 <- predict(tree_1, newdata = data.frame(V1 = X[,1]))
+    tree_2 <- loadForestry("code/saved_tree2.RDS")
+    p_2 <- predict(tree_1, newdata = data.frame(V1 = X[,2]))
+    tree_3 <- loadForestry("code/saved_tree3.RDS")
+    p_3 <- predict(tree_1, newdata = data.frame(V1 = X[,3]))
+    tree_4 <- loadForestry("code/saved_tree4.RDS")
+    p_4 <- predict(tree_1, newdata = data.frame(V1 = X[,4]))
+    tree_5 <- loadForestry("code/saved_tree5.RDS")
+    p_5 <- predict(tree_1, newdata = data.frame(V1 = X[,5]))
+    
+    y <- p_1 + p_2 + p_3 + p_4 + p_5
   }
 
   return(list(X=X, y=y))
@@ -144,27 +171,24 @@ main <- function(args){
 
     bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
 
-    bart_1 <- bart_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n, num_trees_fit=9)
-    results_1 <- c(bart_1$rmse, bart_1$coverage, bart_1$interval_length, n, run, 1)
+    cur_res = list()
+    for (trees in 1:10) {
+      bart_1 <- bart_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n, num_trees_fit=trees)
+      cur_res[[trees]] <- c(bart_1$rmse, bart_1$coverage, bart_1$interval_length, n, run, trees)
+    }
 
-    bart_5 <- bart_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n, num_trees_fit=10)
-    results_5 <- c(bart_5$rmse, bart_5$coverage, bart_5$interval_length, n, run, 8)
-
-    bart_10 <- bart_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n, num_trees_fit=11)
-    results_10 <- c(bart_10$rmse, bart_10$coverage, bart_10$interval_length, n, run, 20)
-
-    combined_results <- rbind(results_1, results_5, results_10)
+    combined_results <- rbind(cur_res[[1]], cur_res[[2]], cur_res[[3]],
+                              cur_res[[4]], cur_res[[5]], cur_res[[6]],
+                              cur_res[[7]], cur_res[[8]], cur_res[[9]],cur_res[[10]])
     results <- rbind(results, combined_results, make.row.names=FALSE)
 
 
 
+    }}
 
-
-      }}
   colnames(results) <- column_names
-  file_name <- here(file.path("theory_results", paste("dgp", dgp,"components_analysis.csv", sep = '_')))
+  file_name <- here(file.path("theory_results2", paste("dgp", dgp,"components_analysis.csv", sep = '_')))
   write.csv(results, file_name, row.names = FALSE, sep = ",")
-
   return(results)
 
 

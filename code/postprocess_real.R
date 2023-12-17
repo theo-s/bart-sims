@@ -1,11 +1,10 @@
 # If needed, install vthemes from Yu-Group website
 # devtools::install_github("Yu-Group/vthemes")
-
 library(ggplot2)
 library(dplyr)
-library(ggeasy)
 library(vthemes)
 
+all_plots = list()
 
 # Unused for now
 calc_winkler <- function(Y,
@@ -31,39 +30,28 @@ calc_winkler <- function(Y,
                     )
   )
   return(mean(winkler))
-  
 }
 
-all_plots = list()
-
 iteration = 1
-for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
-
-
+for (dgp in c("dia","house", "sat", "echo", "tumor", "aba")) {
+  
+  
   results <- data.frame(n = NA,
                         nchain = NA,
                         run = NA,
                         exp = 1,
                         rmse = NA,
                         cov = NA)
-
-
-  # file = "dgp_high_run_8_n_10000_coverage.RDS"
-  # f <- readRDS(file = paste0("results/coverage/",file))
-
-  for (file in dir("results/coverage/")) {
+  
+  for (file in dir("results/coverage4/")) {
     if (grepl(pattern = dgp, x = file)) {
       #print(file)
-      f <- readRDS(file = paste0("results/coverage/",file))
-
+      f <- readRDS(file = paste0("results/coverage4/",file))
+      
       for (iter in 1:3) {
         n_i = f[[1]]$n
         run_i = f[[1]]$run
         nchain_i =f[[1]]$nchain
-        if (is.na(n_i) | is.na(run_i) | is.na(nchain_i)) {
-          print(file)
-          print(f)
-        }
         if (iter == 1) {
           results <- rbind(results,
                            c(n_i, nchain_i, run_i, 1,
@@ -71,13 +59,13 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
         } else if (iter == 2) {
           results <- rbind(results,
                            c(n_i, 2, run_i, 1,
-                             f[[iter]]$rmse, f[[iter]]$coverage))
+                             f[[iter]]$rmse, f[[iter]]$empirical_cov))
         } else if (iter == 3) {
           results <- rbind(results,
                            c(n_i, 5, run_i, 1,
-                             f[[iter]]$rmse, f[[iter]]$coverage))
+                             f[[iter]]$rmse, f[[iter]]$empirical_cov))
         }
-
+        
       }
     }
   }
@@ -85,45 +73,61 @@ for (dgp in c("sum","high", "low", "piecewise", "tree", "lss")) {
   if(dgp=="lss_") {
     dgp = "lss"
   }
-
+  if (dgp == "dia") {
+    dgp = "Diabetes (n = 442)"
+  } else if (dgp == "aba") {
+    dgp = "Abalone (n = 4177)"
+  } else if (dgp == "house") {
+    dgp = "CA Housing (n = 20640)"
+  } else if (dgp == "tumor") {
+    dgp = "Breast Tumor (n = 116640)"
+  } else if (dgp == "echo") {
+    dgp = "Echo Months (n = 17496)"
+  } else if (dgp == "sat") {
+    dgp = "Satellite (n = 6435)"
+  }
+  
   results[-1,] %>%
     group_by(n, nchain, exp) %>%
-    summarise(reps_completed = length(unique(run)),
-              max_rep = max(run)) -> num_runs
+    summarise(reps_completed = max(run)) -> num_runs
   print(dgp)
   print(num_runs)
-
+  
   results[-1,] %>%
-    filter(n>100) %>%
+    group_by(n, exp,run) %>%
+    mutate(rmse_one = rmse[nchain==1]) %>% 
+    ungroup() %>% 
+    mutate(rmse = rmse / rmse_one) %>%
     group_by(n, nchain, exp) %>%
     summarise(mean_rmse = mean(rmse),
               mean_coverage = mean(cov),
-              sd_coverage = sd(cov)/10) %>%
-    dplyr::select(n, nchain, mean_coverage,sd_coverage) %>%
+              sd_coverage = sd(cov)/10,
+              mean_rmse = mean(rmse),
+              sd_rmse = sd(rmse)/10) %>%
+    group_by(n) %>%
+    dplyr::select(n, nchain, mean_rmse,sd_rmse) %>%
     mutate(nchain = as.factor(nchain)) %>%
-    ggplot(aes(x = n, y = mean_coverage))+
-    ggplot2::geom_point(aes(color = nchain)) +
-    ggplot2::geom_line(aes(color = nchain)) +
+    ggplot(aes(x = n, y= mean_rmse, color = nchain))+
+    geom_line(aes(linetype = nchain))+
+    geom_point(aes(color = nchain))+
+    scale_linetype_manual(values = c("1" = "dashed", "2" = "solid", "5" = "solid"), name = "Chains")+
+    geom_errorbar(aes(ymin = mean_rmse - 1.96*sd_rmse, ymax = mean_rmse + 1.96*sd_rmse, color = nchain), width = 0) +
+    labs(y = "Relative RMSE", title = paste0("",dgp))+
+    scale_color_manual(values = c("1"="turquoise1", "2"="steelblue1", "5"="royalblue2"), name = "Chains")+
     vthemes::theme_vmodern() +
-    #vthemes::scale_color_vmodern(discrete = FALSE)+
-    labs(y = "Empirical Coverage", title = paste0("",dgp))+
-    geom_errorbar(aes(ymin = mean_coverage - 1.96*sd_coverage, ymax = mean_coverage + 1.96*sd_coverage, color = nchain), width = 0)+
-    scale_color_manual(values = c("1"="turquoise1", "2"="steelblue1", "5"="royalblue2"),name = "Chains")+
     theme(axis.line = element_line(color='black'),
           panel.background = element_rect(fill = 'white', color = 'white'),
           panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
           text = element_text(family = "Times"),
+          panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           axis.title=element_text(size=6))+
-    scale_x_continuous(labels = function(x){return(paste0(as.character(x/1e3), "K"))})+
-    scale_y_continuous(labels = function(x){return(paste0(as.character(x*100), "%"))})+
-    geom_hline(yintercept = .95,linetype="dashed",
-               color = "red") -> plot_i
-  
+    scale_x_continuous(labels = function(x){return(paste0(as.character(x*10), "%"))})+
+    scale_y_continuous(limits = c(.94,1.01), labels = function(x){return(paste0(as.character(x*100), "%"))})-> plot_i
   all_plots[[iteration]] = plot_i
-  ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"coverage.pdf"), height = 2.5, width = 3)
-
+  
+  ggsave(plot_i,filename = paste0("results/figures/coverage/",dgp,"rmse.pdf"), height = 2.5, width = 3)
+  
   iteration <- iteration+1
 }
 
@@ -137,4 +141,4 @@ p_final = grid.arrange(all_plots[[1]]+theme(legend.position ="none"),
                        all_plots[[6]]+theme(axis.title.y=element_blank()), 
                        widths =c(4,4,5.5),
                        ncol = 3)
-ggsave(p_final,filename = paste0("results/figures/coverage/all_coverages.pdf"), height = 5, width = 8)
+ggsave(p_final,filename = paste0("results/figures/coverage/real_rmse.pdf"), height = 5, width = 8)

@@ -6,7 +6,6 @@ library(here)
 library(onehot)
 library(dgpoix)
 library(Rforestry)
-library(Rfast)
 
 option_list = list(
   make_option(c("-d", "--dgp"), type="character", default="sum",
@@ -22,11 +21,11 @@ athey_outcome <- function(X){
 
 piecewise_linear_outcome <- function(X) {
   d <- ncol(X)
-
+  
   beta1 <- runif(d, -15, 15)
   beta2 <- runif(d, -15, 15)
   beta3 <- runif(d, -15, 15)
-
+  
   ifelse(
     X[, ncol(X)] < -0.4,
     as.matrix(X) %*% beta1,
@@ -92,61 +91,86 @@ get.features <- function(data){
     X <- dgpoix::generate_X_gaussian(.n = n, .p = 10)
     # y = 2 * 1(X_1 < 0, X_3 > 0) - 3 * 1(X_5 > 0, X_6 > 1) + .8 * 1(X_3 < 1.5, X_5 < 1)
     y <- generate_y_lss(X = X, k = 2, s = matrix(1:4, nrow = 2, byrow = TRUE),
-                        thresholds = 0, signs = 1, betas = 1)
-
+                        thresholds = 0, signs = 1, betas = 1)+
+      generate_y_lss(X = X, k = 2, s = matrix(1:4, nrow = 2, byrow = TRUE),
+                     thresholds = 0, signs = -1, betas = 1)
   } else if (dgp == "lss3") {
     X <- dgpoix::generate_X_gaussian(.n = n, .p = 10)
     
     y <- generate_y_lss(X = X, k = 2, s = matrix(1:6, nrow = 3, byrow = TRUE),
-                        thresholds = 0, signs = 1, betas = 1)
+                        thresholds = 0, signs = 1, betas = 1)+
+      generate_y_lss(X = X, k = 2, s = matrix(1:6, nrow = 3, byrow = TRUE),
+                     thresholds = 0, signs = -1, betas = 1)
   } else if (dgp == "lss5") {
     X <- dgpoix::generate_X_gaussian(.n = n, .p = 10)
     
     y <- generate_y_lss(X = X, k = 2, s = matrix(1:10, nrow = 5, byrow = TRUE),
-                        thresholds = 0, signs = 1, betas = 1)
+                        thresholds = 0, signs = 1, betas = 1) +
+      generate_y_lss(X = X, k = 2, s = matrix(1:10, nrow = 5, byrow = TRUE),
+                     thresholds = 0, signs = -1, betas = 1)
   }
-
+  
   return(list(X=X, y=y))
-
+  
 }
 
 get_data <- function(dgp,n, q=10, rho=0.05, seed=0){
-
+  
   train_n <- n
   test_n <- 1000
   set.seed(seed)
-
+  
   if ((dgp %in% c("2016","2017","2018","2019"))) {
     data <- read.csv(paste0("data/ACIC",dgp,".csv"))
-
+    
     # Shuffle the data set, so the train and test set are disjoint
     # but we break any unintended clustering of observations
     data <- data[sample(1:nrow(data), size = train_n+test_n, replace = FALSE),]
     encoding <- onehot::onehot(data, stringsAsFactors = TRUE, max_levels = 100)
     data <- predict(encoding, data)
-
+    
     if (nrow(data) < train_n+test_n) {
       stop("N is too large for the current dgp")
     }
-
+    
     data_train <- data[1:train_n,-which(colnames(data) == "Ytrue")]
     data_test <- data[(train_n+1):(train_n+200),-which(colnames(data) == "Y")]
-
+    
     colnames(data_train)[which(colnames(data_train) == "Y")] <- "y"
     colnames(data_test)[which(colnames(data_test) == "Ytrue")] <- "y"
-
+    
     data_train <- cbind(data_train[,-which(colnames(data_train) == "y")],
                         data_train[,which(colnames(data_train) == "y")])
-
+    
     data_test <- cbind(data_test[,-which(colnames(data_test) == "y")],
                        data_test[,which(colnames(data_test) == "y")])
-
-
+    
+    
+    data_all <- list(train=as.matrix(data_train),
+                     test=as.matrix(data_test))
+  } else if ((dgp %in% c("aba", "sat", "house","dia","echo","tumor"))) {
+    data_train <- read.csv(paste0("data/",dgp,"_train.csv"))
+    data_test <- read.csv(paste0("data/",dgp,"_test.csv"))
+    
+    if (n == 1) {
+      data_train = data_train[sample(1:nrow(data_train), 
+                                     size = round(.1*nrow(data_train)), 
+                                     replace = FALSE),]
+    } else if (n == 2) {
+      data_train = data_train[sample(1:nrow(data_train), 
+                                     size = round(.2*nrow(data_train)), 
+                                     replace = FALSE),]
+    } else if (n == 5) {
+      data_train = data_train[sample(1:nrow(data_train), 
+                                     size = round(.5*nrow(data_train)), 
+                                     replace = FALSE),]
+    }
+    
     data_all <- list(train=as.matrix(data_train),
                      test=as.matrix(data_test))
   } else {
     data_train <- .generate_data(dgp, train_n, q, rho)
-
+    
     # Modify noise level based on the variance of the outcome
     if (dgp == "sum") {
       noise_sd <- 2
@@ -161,10 +185,10 @@ get_data <- function(dgp,n, q=10, rho=0.05, seed=0){
     } else if (substr(dgp, 1,3) == "lss") {
       noise_sd <- 2*sd(data_train$y)
     }
-
+    
     data_train$y <- data_train$y + noise_sd * rnorm(train_n)
     data_test <- .generate_data(dgp, test_n, q, rho)
-
+    
     data_all <- list(train=cbind(data_train$X, data_train$y),
                      test=cbind(data_test$X, data_test$y))
   }
@@ -197,7 +221,7 @@ bart_sim <- function(dgp, nchain, n, total_ndpost, seed){
                    nchain = nchain,
                    seed = seed,
                    proposalprobs=probs)
-
+  
   point_preds_bart <-  bart_fit$yhat.test.mean
   rmse <- sqrt(mean((point_preds_bart-y.test)^2))
   posterior_bart <- bart_fit$yhat.test
@@ -211,31 +235,6 @@ bart_sim <- function(dgp, nchain, n, total_ndpost, seed){
               true_outcome=y.test))
 }
 
-knn_sim <- function(dgp, nchain, n, total_ndpost, seed){
-
-  q <- 10
-  data_all <- get_data(dgp=dgp, n = n, q = q, rho = 0.01, seed = seed)
-  data_train <- data_all$train
-  data_test <- data_all$test
-  x.train <- get.features(data_train)
-  y.train <- get.labels(data_train)
-  x.test <- get.features(data_test)
-  y.test <- get.labels(data_test)
-  
-  kvals = round(seq(from = .01*n, to = .1*n, length.out=100))
-  k.cv = knn.cv(x = x.train, y = y.train, type = "R",k=kvals)
-  min_k = kvals[which.min(k.cv$crit[,1])]
-  k.fit = knn(x = x.train, y = y.train, xnew=x.test, type = "R", k = min_k)
-  
-  rmse <- sqrt(mean((k.fit[,1]-y.test)^2))
-
-  return(list(rmse=rmse,
-              coverage = 0,
-              upper=0,
-              lower=0,
-              true_outcome=y.test))
-}
-
 main <- function(args){
   runs <- args$runs
   dgp <- args$dgp
@@ -243,12 +242,13 @@ main <- function(args){
   column_names <- c("RMSE", "Coverage", "Interval length", "n", "run", "Chains")
   results <- data.frame(matrix(ncol = length(column_names), nrow = 0))
   colnames(results) <- column_names
-  for (n in c(100,1000,10e3,20e3,50e3,100e3)){
-    for (run in 1:runs){
-
+  for (n in c(1,2,5,10)){
+    
+    for (run in 1:100){
+      
       bart_sim_partial <- partial(bart_sim, dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
-
-      bart_1 <- knn_sim(nchain=1,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
+      
+      bart_1 <- bart_sim(nchain=1,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
       results_1 <- list("rmse" = bart_1$rmse,
                         "empirical_cov" = bart_1$coverage,
                         "ci_upper" = bart_1$upper,
@@ -257,8 +257,8 @@ main <- function(args){
                         "n" = n,
                         "run" = run,
                         "nchain" = 1)
-
-      bart_2 <- knn_sim(nchain=2,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
+      
+      bart_2 <- bart_sim(nchain=2,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
       results_2 <- list("rmse" = bart_2$rmse,
                         "empirical_cov" = bart_2$coverage,
                         "ci_upper" = bart_2$upper,
@@ -267,8 +267,8 @@ main <- function(args){
                         "n" = n,
                         "run" = run,
                         "nchain" = 2)
-
-      bart_5 <- knn_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
+      
+      bart_5 <- bart_sim(nchain=5,dgp = dgp, total_ndpost=total_ndpost, seed=run, n=n)
       results_5 <- list("rmse" = bart_5$rmse,
                         "empirical_cov" = bart_5$coverage,
                         "ci_upper" = bart_5$upper,
@@ -277,10 +277,10 @@ main <- function(args){
                         "n" = n,
                         "run" = run,
                         "nchain" = 5)
-
+      
       combined_results <- list(results_1, results_2, results_5)
-
-      file_name <- here(file.path("results/coverage5/", paste("dgp", dgp,"run",run,"n",n,"coverage.RDS", sep = '_')))
+      
+      file_name <- here(file.path("results/coverage4/", paste("dgp", dgp,"run",run,"n",n,"coverage.RDS", sep = '_')))
       saveRDS(combined_results, file_name)
     }}
   return(results)
@@ -290,7 +290,8 @@ main <- function(args){
 if (getOption('run.main', default=TRUE)) {
   parser <- OptionParser(option_list=option_list);
   args <- parse_args(parser);
-
+  
   print(main(args))
 }
+
 
